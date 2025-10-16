@@ -1,5 +1,6 @@
 import { NextPage } from 'next'
 import { useState, useEffect } from 'react'
+import { IRSSpec, CCSSpec, RunRequest, RunStatus, PVBreakdown } from '../src/sdk'
 
 interface HealthResponse {
   ok: boolean
@@ -53,6 +54,17 @@ const Health: NextPage = () => {
           </pre>
         </div>
       )}
+      
+      <div style={{ marginTop: '2rem' }}>
+        <h2>Available Types (from generated SDK):</h2>
+        <ul>
+          <li>IRSSpec - Interest Rate Swap specification</li>
+          <li>CCSSpec - Cross Currency Swap specification</li>
+          <li>RunRequest - Valuation run request</li>
+          <li>RunStatus - Run status information</li>
+          <li>PVBreakdown - Present value breakdown with lineage</li>
+        </ul>
+      </div>
       
       <p>
         <a href="/" style={{ color: 'blue', textDecoration: 'underline' }}>
