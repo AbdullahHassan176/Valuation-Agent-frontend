@@ -17,6 +17,11 @@ const Home: NextPage = () => {
             Create New Run
           </a>
         </Link>
+        <Link href="/curves">
+          <a style={{ color: 'blue', textDecoration: 'underline' }}>
+            Curves Dashboard
+          </a>
+        </Link>
       </div>
     </div>
   )
