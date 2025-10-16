@@ -1,0 +1,21 @@
+# Cursor Rules — FRONTEND (Valuation Agent Workspace)
+
+GOAL
+- Scaffold a Next.js 14 + Tailwind + shadcn/ui app that consumes BACKEND at http://localhost:8000.
+- Do NOT implement business logic or pricing. Focus on wiring and basic pages later.
+
+HOW TO RUN (later)
+- pnpm install
+- pnpm dev (expects NEXT_PUBLIC_BACKEND_BASE to be set)
+
+DOCKER
+- `docker compose up --build` from parent uses this repo's Dockerfile.
+- Current image is a placeholder. Replace with actual Next.js Dockerfile when UI exists.
+
+INTEGRATION
+- Only call BACKEND endpoints (never API directly) from the browser.
+- Use the shared SDK in the future (not generated yet).
+
+GUARDRAILS
+- Do not create valuation logic or IFRS content here.
+- Keep env vars prefixed with NEXT_PUBLIC_ for browser exposure.
