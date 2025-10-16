@@ -1,2 +1,8 @@
-FROM alpine:3.20
-CMD ["sh","-c","echo frontend up && tail -f /dev/null"]
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
