@@ -25,3 +25,9 @@ docker compose up --build
 ### Health Check
 - Visit http://localhost:3000/health → Shows backend JSON response
 - Visit http://localhost:3000 → Home page with navigation
+
+### Available Pages
+- `/` - Home page with navigation
+- `/health` - Backend health check with SDK types display
+- `/runs/new` - Create new valuation run form (IRSSpec)
+- `/runs/[id]` - Run detail page with status polling
