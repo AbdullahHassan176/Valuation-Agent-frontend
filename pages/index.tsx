@@ -6,11 +6,18 @@ const Home: NextPage = () => {
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
       <h1>Valuation Agent Frontend</h1>
       <p>Welcome to the Valuation Agent Workspace frontend.</p>
-      <Link href="/health">
-        <a style={{ color: 'blue', textDecoration: 'underline' }}>
-          Check Backend Health
-        </a>
-      </Link>
+      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+        <Link href="/health">
+          <a style={{ color: 'blue', textDecoration: 'underline' }}>
+            Check Backend Health
+          </a>
+        </Link>
+        <Link href="/runs/new">
+          <a style={{ color: 'blue', textDecoration: 'underline' }}>
+            Create New Run
+          </a>
+        </Link>
+      </div>
     </div>
   )
 }
