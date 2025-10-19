@@ -113,6 +113,11 @@ export default function CurvesPage() {
   const [asOfDate, setAsOfDate] = useState("2025-01-18")
   const [showChat, setShowChat] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+  const [isLoading, setIsLoading] = useState(false)
+  const [filteredCurves, setFilteredCurves] = useState(mockCurves)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [showBootstrapModal, setShowBootstrapModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -143,6 +148,80 @@ export default function CurvesPage() {
     }
   }
 
+  // Handler functions
+  const handleBootstrapCurve = () => {
+    setShowBootstrapModal(true)
+  }
+
+  const handleImportData = () => {
+    setShowImportModal(true)
+  }
+
+  const handleRefreshAll = async () => {
+    setIsLoading(true)
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    setIsLoading(false)
+    // In real implementation, this would refresh data from backend
+  }
+
+  const handleApplyFilters = () => {
+    let filtered = mockCurves
+    
+    if (selectedCurrency !== "all") {
+      filtered = filtered.filter(curve => curve.currency === selectedCurrency)
+    }
+    
+    if (selectedType !== "all") {
+      filtered = filtered.filter(curve => curve.type === selectedType)
+    }
+    
+    if (selectedStatus !== "all") {
+      filtered = filtered.filter(curve => curve.status === selectedStatus)
+    }
+    
+    setFilteredCurves(filtered)
+    setCurrentPage(1)
+  }
+
+  const handleClearFilters = () => {
+    setSelectedCurrency("all")
+    setSelectedType("all")
+    setSelectedStatus("all")
+    setFilteredCurves(mockCurves)
+    setCurrentPage(1)
+  }
+
+  const handleViewCurve = (curveId: string) => {
+    // Navigate to curve details
+    console.log(`Viewing curve: ${curveId}`)
+  }
+
+  const handleBootstrapCurve = (curveId: string) => {
+    // Bootstrap specific curve
+    console.log(`Bootstrapping curve: ${curveId}`)
+  }
+
+  const handleDownloadCurve = (curveId: string) => {
+    // Download curve data
+    console.log(`Downloading curve: ${curveId}`)
+  }
+
+  const handleRefreshCurve = (curveId: string) => {
+    // Refresh specific curve
+    console.log(`Refreshing curve: ${curveId}`)
+  }
+
+  const handleDebugCurve = (curveId: string) => {
+    // Debug curve issues
+    console.log(`Debugging curve: ${curveId}`)
+  }
+
+  const handleRetryCurve = (curveId: string) => {
+    // Retry failed curve
+    console.log(`Retrying curve: ${curveId}`)
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
@@ -160,17 +239,27 @@ export default function CurvesPage() {
             </div>
             
             <div className="flex space-x-2">
-              <Button className="bg-green-500 hover:bg-green-600 text-black">
+              <Button 
+                onClick={handleBootstrapCurve}
+                className="bg-green-500 hover:bg-green-600 text-black"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Bootstrap Curve
               </Button>
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+              <Button 
+                onClick={handleImportData}
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
                 <Upload className="w-4 h-4 mr-2" />
                 Import Data
               </Button>
-              <Button className="bg-gray-700 hover:bg-gray-600 text-white">
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Refresh All
+              <Button 
+                onClick={handleRefreshAll}
+                disabled={isLoading}
+                className="bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50"
+              >
+                <RotateCcw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                {isLoading ? 'Refreshing...' : 'Refresh All'}
               </Button>
             </div>
           </div>
@@ -309,11 +398,17 @@ export default function CurvesPage() {
               </div>
               
               <div className="ml-auto flex space-x-2">
-                <Button className="bg-gray-700 hover:bg-gray-600 text-white">
+                <Button 
+                  onClick={handleApplyFilters}
+                  className="bg-gray-700 hover:bg-gray-600 text-white"
+                >
                   <Filter className="w-4 h-4 mr-2" />
                   Apply Filters
                 </Button>
-                <Button className="bg-gray-600 hover:bg-gray-500 text-gray-300">
+                <Button 
+                  onClick={handleClearFilters}
+                  className="bg-gray-600 hover:bg-gray-500 text-gray-300"
+                >
                   <X className="w-4 h-4 mr-2" />
                   Clear
                 </Button>
@@ -388,7 +483,7 @@ export default function CurvesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {mockCurves.map((curve) => (
+                {filteredCurves.map((curve) => (
                   <tr key={curve.id} className="hover:bg-gray-750 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -423,26 +518,62 @@ export default function CurvesPage() {
                     <td className="px-6 py-4 text-sm text-gray-300 font-mono">{curve.version}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm" className="text-gray-300 hover:text-green-500">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-gray-300 hover:text-green-500"
+                          onClick={() => handleViewCurve(curve.id)}
+                          title="View Curve"
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-gray-300 hover:text-blue-500">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-gray-300 hover:text-blue-500"
+                          onClick={() => handleBootstrapCurve(curve.id)}
+                          title="Bootstrap Curve"
+                        >
                           <PlusCircle className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-gray-300 hover:text-yellow-500">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-gray-300 hover:text-yellow-500"
+                          onClick={() => handleDownloadCurve(curve.id)}
+                          title="Download Curve"
+                        >
                           <Download className="w-4 h-4" />
                         </Button>
                         {curve.status === 'stale' && (
-                          <Button variant="ghost" size="sm" className="text-gray-300 hover:text-yellow-500">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-gray-300 hover:text-yellow-500"
+                            onClick={() => handleRefreshCurve(curve.id)}
+                            title="Refresh Curve"
+                          >
                             <Sync className="w-4 h-4" />
                           </Button>
                         )}
                         {curve.status === 'error' && (
                           <>
-                            <Button variant="ghost" size="sm" className="text-gray-300 hover:text-red-500">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-gray-300 hover:text-red-500"
+                              onClick={() => handleDebugCurve(curve.id)}
+                              title="Debug Curve"
+                            >
                               <Bug className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="text-gray-300 hover:text-blue-500">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-gray-300 hover:text-blue-500"
+                              onClick={() => handleRetryCurve(curve.id)}
+                              title="Retry Curve"
+                            >
                               <Redo className="w-4 h-4" />
                             </Button>
                           </>
@@ -457,20 +588,188 @@ export default function CurvesPage() {
           
           <div className="p-4 border-t border-gray-700 flex items-center justify-between">
             <div className="text-sm text-gray-300">
-              Showing 1-3 of 3 curves
+              Showing {((currentPage - 1) * 10) + 1}-{Math.min(currentPage * 10, filteredCurves.length)} of {filteredCurves.length} curves
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" disabled className="bg-gray-700 text-gray-300">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+                className="bg-gray-700 text-gray-300 disabled:opacity-50"
+              >
                 Previous
               </Button>
-              <Button size="sm" className="bg-green-500 text-black">1</Button>
-              <Button variant="outline" size="sm" className="bg-gray-700 text-white hover:bg-gray-600">
+              <Button 
+                size="sm" 
+                className="bg-green-500 text-black"
+              >
+                {currentPage}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage * 10 >= filteredCurves.length}
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="bg-gray-700 text-white hover:bg-gray-600 disabled:opacity-50"
+              >
                 Next
               </Button>
             </div>
           </div>
         </Card>
       </section>
+
+      {/* Bootstrap Curve Modal */}
+      {showBootstrapModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 w-96">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Bootstrap New Curve</h3>
+              <Button 
+                onClick={() => setShowBootstrapModal(false)}
+                variant="ghost" 
+                size="sm"
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Currency</label>
+                <Select>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                    <SelectItem value="JPY">JPY</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Curve Type</label>
+                <Select>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="OIS">OIS</SelectItem>
+                    <SelectItem value="SOFR">SOFR</SelectItem>
+                    <SelectItem value="EURIBOR">EURIBOR</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Market Data Source</label>
+                <Select>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="synthetic">Synthetic Data</SelectItem>
+                    <SelectItem value="bloomberg">Bloomberg</SelectItem>
+                    <SelectItem value="reuters">Reuters</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button 
+                onClick={() => setShowBootstrapModal(false)}
+                variant="outline"
+                className="bg-gray-700 text-gray-300 hover:bg-gray-600"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  console.log("Bootstrap curve initiated");
+                  setShowBootstrapModal(false);
+                }}
+                className="bg-green-500 hover:bg-green-600 text-black"
+              >
+                Bootstrap Curve
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Data Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 w-96">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Import Market Data</h3>
+              <Button 
+                onClick={() => setShowImportModal(false)}
+                variant="ghost" 
+                size="sm"
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Data Source</label>
+                <Select>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="file">Upload File</SelectItem>
+                    <SelectItem value="api">API Connection</SelectItem>
+                    <SelectItem value="manual">Manual Entry</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">File Type</label>
+                <Select>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectValue placeholder="Select file type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="csv">CSV</SelectItem>
+                    <SelectItem value="excel">Excel</SelectItem>
+                    <SelectItem value="json">JSON</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Upload File</label>
+                <div className="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center">
+                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">Drag and drop files here or click to browse</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button 
+                onClick={() => setShowImportModal(false)}
+                variant="outline"
+                className="bg-gray-700 text-gray-300 hover:bg-gray-600"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  console.log("Import data initiated");
+                  setShowImportModal(false);
+                }}
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                Import Data
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Chat Toggle Button */}
       <Button 
