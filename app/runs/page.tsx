@@ -84,13 +84,8 @@ import {
   Store,
   Factory,
   Warehouse,
-  Office,
   School,
-  Hospital,
-  Bank,
   Church,
-  Mosque,
-  Temple,
   Castle,
   Tent,
   Car,
@@ -100,12 +95,7 @@ import {
   Plane,
   Ship,
   Bike,
-  Scooter,
-  Motorcycle,
-  Taxi,
-  Ambulance,
-  Fire,
-  Police,
+  Flame,
   ShieldCheck
 } from "lucide-react"
 
@@ -118,287 +108,94 @@ interface ValuationRun {
     icon: string
   }
   asOfDate: string
-  approach: string
-  status: "completed" | "running" | "queued" | "failed" | "review_required"
-  ifrsLevel: "Level 1" | "Level 2" | "Level 3" | "Pending" | "N/A"
-  pv: number | null
-  notional: string
-  createdBy: {
-    name: string
-    role: string
-    avatar: string
-  }
-  duration: string
-  timestamp: string
-  progress?: number
+  status: "completed" | "running" | "failed" | "queued"
+  pv: number
   currency: string
-  sensitivity?: {
-    ir01: number
-    dv01: number
-    gamma: number
-  }
-  xva?: {
-    cva: number
-    dva: number
-    fva: number
+  createdBy: string
+  createdAt: string
+  completedAt?: string
+  errorMessage?: string
+  approach: string[]
+  marketDataProfile: string
+  xvaConfig?: {
+    computeCva: boolean
+    computeDva: boolean
+    computeFva: boolean
   }
 }
 
 export default function RunsPage() {
   const router = useRouter()
-  const [selectedRuns, setSelectedRuns] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [filters, setFilters] = useState({
-    dateRange: { from: "", to: "" },
-    instrumentType: "All Types",
-    runStatus: "All Statuses",
-    ifrsLevel: "All Levels",
-    currency: "All Currencies",
-    approach: "All Approaches",
-    createdBy: "All Users",
-    notionalRange: { min: "", max: "" }
-  })
-  const [activeFilters, setActiveFilters] = useState<string[]>(["Last 7 days", "IRS Only"])
-  const [density, setDensity] = useState<"compact" | "normal" | "comfortable">("normal")
-  const [showChat, setShowChat] = useState(true)
-  const [showNewRunDialog, setShowNewRunDialog] = useState(false)
-  const [showExportDialog, setShowExportDialog] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
-  const [selectedRunType, setSelectedRunType] = useState('')
-  const [runConfig, setRunConfig] = useState({
-    notional: '',
-    currency: 'USD',
-    tenor: '5Y',
-    fixedRate: '',
-    floatingIndex: 'SOFR'
-  })
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [chatMessages, setChatMessages] = useState<Array<{
-    id: string
-    role: 'user' | 'assistant'
-    content: string
-    timestamp: Date
-  }>>([])
-  const [chatInput, setChatInput] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [selectedRuns, setSelectedRuns] = useState<string[]>([])
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
 
+  // Mock data - replace with actual API calls
   const runs: ValuationRun[] = [
     {
-      id: "VAL-2025-0118-001",
+      id: "run-001",
       instrument: {
-        name: "USD IRS",
+        name: "USD 5Y IRS",
         type: "IRS",
-        description: "Pay Fixed 3.50%",
-        icon: "percentage"
+        description: "5-year USD Interest Rate Swap",
+        icon: "📈"
       },
-      asOfDate: "2025-01-18",
-      approach: "DCF",
+      asOfDate: "2024-01-15",
       status: "completed",
-      ifrsLevel: "Level 2",
-      pv: 127450.23,
-      notional: "10M notional",
+      pv: 125000.50,
       currency: "USD",
-      createdBy: {
-        name: "Alex Johnson",
-        role: "Senior Analyst",
-        avatar: "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg"
-      },
-      duration: "2.1 min",
-      timestamp: "2 minutes ago",
-      sensitivity: { ir01: 1250.45, dv01: 987.32, gamma: 45.67 },
-      xva: { cva: 1250.45, dva: 987.32, fva: 234.56 }
+      createdBy: "john.doe@company.com",
+      createdAt: "2024-01-15T09:30:00Z",
+      completedAt: "2024-01-15T09:32:15Z",
+      approach: ["OIS_discounting"],
+      marketDataProfile: "synthetic"
     },
     {
-      id: "VAL-2025-0118-002",
+      id: "run-002",
       instrument: {
-        name: "USD/EUR CCS",
+        name: "EUR/USD CCS",
         type: "CCS",
-        description: "SOFR vs €STR",
-        icon: "exchange"
+        description: "Cross Currency Swap EUR/USD",
+        icon: "🌍"
       },
-      asOfDate: "2025-01-18",
-      approach: "HW1F",
-      status: "review_required",
-      ifrsLevel: "Level 3",
-      pv: -45782.91,
-      notional: "10M USD notional",
-      currency: "USD",
-      createdBy: {
-        name: "Sarah Chen",
-        role: "VP Derivatives",
-        avatar: "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg"
-      },
-      duration: "3.1 min",
-      timestamp: "12 minutes ago",
-      sensitivity: { ir01: 2150.45, dv01: 1876.32, gamma: 78.67 },
-      xva: { cva: 2150.45, dva: 1876.32, fva: 456.78 }
-    },
-    {
-      id: "VAL-2025-0118-003",
-      instrument: {
-        name: "CHF IRS",
-        type: "IRS",
-        description: "Receive Fixed 1.25%",
-        icon: "percentage"
-      },
-      asOfDate: "2025-01-18",
-      approach: "DCF",
-      status: "failed",
-      ifrsLevel: "N/A",
-      pv: null,
-      notional: "5M CHF notional",
-      currency: "CHF",
-      createdBy: {
-        name: "Mike Rodriguez",
-        role: "Quantitative Analyst",
-        avatar: "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg"
-      },
-      duration: "Failed at 1.2 min",
-      timestamp: "25 minutes ago"
-    },
-    {
-      id: "VAL-2025-0118-004",
-      instrument: {
-        name: "GBP IRS",
-        type: "IRS",
-        description: "Pay Fixed 4.20%",
-        icon: "percentage"
-      },
-      asOfDate: "2025-01-18",
-      approach: "DCF",
+      asOfDate: "2024-01-15",
       status: "running",
-      ifrsLevel: "Pending",
-      pv: null,
-      notional: "15M GBP notional",
+      pv: 0,
+      currency: "USD",
+      createdBy: "jane.smith@company.com",
+      createdAt: "2024-01-15T10:15:00Z",
+      approach: ["OIS_discounting_with_FX"],
+      marketDataProfile: "synthetic"
+    },
+    {
+      id: "run-003",
+      instrument: {
+        name: "GBP 3Y IRS",
+        type: "IRS",
+        description: "3-year GBP Interest Rate Swap",
+        icon: "💷"
+      },
+      asOfDate: "2024-01-15",
+      status: "failed",
+      pv: 0,
       currency: "GBP",
-      createdBy: {
-        name: "Emma Wilson",
-        role: "Risk Manager",
-        avatar: "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg"
-      },
-      duration: "1.8 min",
-      timestamp: "5 minutes ago",
-      progress: 65
-    },
-    {
-      id: "VAL-2025-0118-005",
-      instrument: {
-        name: "JPY/EUR CCS",
-        type: "CCS",
-        description: "TONA vs €STR",
-        icon: "exchange"
-      },
-      asOfDate: "2025-01-18",
-      approach: "HW1F",
-      status: "queued",
-      ifrsLevel: "Pending",
-      pv: null,
-      notional: "50M JPY notional",
-      currency: "JPY",
-      createdBy: {
-        name: "David Kim",
-        role: "Treasury Analyst",
-        avatar: "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-6.jpg"
-      },
-      duration: "Queued",
-      timestamp: "8 minutes ago"
-    },
-    {
-      id: "VAL-2025-0118-006",
-      instrument: {
-        name: "EUR Cap",
-        type: "Cap",
-        description: "3M EURIBOR Cap 2.50%",
-        icon: "shield"
-      },
-      asOfDate: "2025-01-18",
-      approach: "Black-Scholes",
-      status: "completed",
-      ifrsLevel: "Level 2",
-      pv: 45678.90,
-      notional: "25M EUR notional",
-      currency: "EUR",
-      createdBy: {
-        name: "Lisa Wang",
-        role: "Derivatives Trader",
-        avatar: "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-7.jpg"
-      },
-      duration: "4.2 min",
-      timestamp: "1 hour ago",
-      sensitivity: { ir01: 3456.78, dv01: 2345.67, gamma: 123.45 },
-      xva: { cva: 3456.78, dva: 2345.67, fva: 567.89 }
+      createdBy: "mike.wilson@company.com",
+      createdAt: "2024-01-15T11:00:00Z",
+      errorMessage: "Invalid market data for GBP",
+      approach: ["OIS_discounting"],
+      marketDataProfile: "synthetic"
     }
   ]
 
-  const handleNewIRSRun = () => {
-    setSelectedRunType('IRS')
-    setShowNewRunDialog(true)
-  }
+  const filteredRuns = runs.filter(run => {
+    const matchesSearch = run.instrument.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         run.instrument.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === "all" || run.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
-  const handleNewCCSRun = () => {
-    setSelectedRunType('CCS')
-    setShowNewRunDialog(true)
-  }
-
-  const handleExportList = () => {
-    setShowExportDialog(true)
-  }
-
-  const handleSelectAll = () => {
-    if (selectedRuns.length === runs.length) {
-      setSelectedRuns([])
-    } else {
-      setSelectedRuns(runs.map(run => run.id))
-    }
-  }
-
-  const handleRestartSelected = () => {
-    if (selectedRuns.length === 0) return
-    setIsProcessing(true)
-    console.log('Restarting selected runs:', selectedRuns)
-    setTimeout(() => {
-      setIsProcessing(false)
-      setSelectedRuns([])
-    }, 2000)
-  }
-
-  const handleCancelSelected = () => {
-    if (selectedRuns.length === 0) return
-    setIsProcessing(true)
-    console.log('Canceling selected runs:', selectedRuns)
-    setTimeout(() => {
-      setIsProcessing(false)
-      setSelectedRuns([])
-    }, 1500)
-  }
-
-  const handleExportSelected = () => {
-    if (selectedRuns.length === 0) return
-    console.log('Exporting selected runs:', selectedRuns)
-    setShowExportDialog(true)
-  }
-
-  const handleDeleteSelected = () => {
-    if (selectedRuns.length === 0) return
-    console.log('Deleting selected runs:', selectedRuns)
-    setSelectedRuns([])
-  }
-
-  const handleStartRun = () => {
-    setIsProcessing(true)
-    console.log('Starting new run:', { type: selectedRunType, config: runConfig })
-    setShowNewRunDialog(false)
-    setRunConfig({ notional: '', currency: 'USD', tenor: '5Y', fixedRate: '', floatingIndex: 'SOFR' })
-    setTimeout(() => {
-      setIsProcessing(false)
-    }, 3000)
-  }
-
-  const handleExport = (format: string) => {
-    console.log('Exporting in format:', format)
-    setShowExportDialog(false)
-  }
-
-  const handleRunSelect = (runId: string) => {
+  const handleSelectRun = (runId: string) => {
     setSelectedRuns(prev => 
       prev.includes(runId) 
         ? prev.filter(id => id !== runId)
@@ -406,644 +203,299 @@ export default function RunsPage() {
     )
   }
 
-  const handleViewRun = (runId: string) => {
-    router.push(`/runs/${runId}`)
+  const handleSelectAll = () => {
+    setSelectedRuns(
+      selectedRuns.length === filteredRuns.length 
+        ? [] 
+        : filteredRuns.map(run => run.id)
+    )
   }
 
-  const handleChatSubmit = () => {
-    if (chatInput.trim()) {
-      const newMessage = {
-        id: Date.now().toString(),
-        role: 'user' as const,
-        content: chatInput,
-        timestamp: new Date()
-      }
-      setChatMessages(prev => [...prev, newMessage])
-      setChatInput('')
-      
-      // Simulate AI response
-      setTimeout(() => {
-        const aiResponse = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant' as const,
-          content: `I can help you analyze the selected runs. You have ${selectedRuns.length} runs selected. Would you like me to explain the valuation methodology or generate a sensitivity analysis?`,
-          timestamp: new Date()
-        }
-        setChatMessages(prev => [...prev, aiResponse])
-      }, 1000)
-    }
+  const handleCreateRun = () => {
+    setShowCreateDialog(true)
+  }
+
+  const handleViewRun = (runId: string) => {
+    router.push(`/runs/run-detail?id=${runId}`)
+  }
+
+  const handleDownloadRun = (runId: string) => {
+    // Implement download functionality
+    console.log("Downloading run:", runId)
+  }
+
+  const handleDeleteRuns = () => {
+    // Implement delete functionality
+    console.log("Deleting runs:", selectedRuns)
+    setSelectedRuns([])
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <CheckCircle className="w-4 h-4 text-green-600" />
+        return <CheckCircle className="h-4 w-4 text-green-500" />
       case "running":
-        return <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
-      case "queued":
-        return <Clock className="w-4 h-4 text-yellow-600" />
+        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
       case "failed":
-        return <XCircle className="w-4 h-4 text-red-600" />
-      case "review_required":
-        return <AlertTriangle className="w-4 h-4 text-orange-600" />
+        return <XCircle className="h-4 w-4 text-red-500" />
+      case "queued":
+        return <Clock className="h-4 w-4 text-yellow-500" />
       default:
-        return <Clock className="w-4 h-4 text-gray-600" />
+        return <AlertCircle className="h-4 w-4 text-gray-500" />
     }
   }
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      completed: "bg-green-600 text-white",
-      running: "bg-blue-600 text-white",
-      queued: "bg-yellow-600 text-white",
-      failed: "bg-red-600 text-white",
-      review_required: "bg-orange-600 text-white"
+      completed: "bg-green-100 text-green-800",
+      running: "bg-blue-100 text-blue-800",
+      failed: "bg-red-100 text-red-800",
+      queued: "bg-yellow-100 text-yellow-800"
     }
-    return variants[status as keyof typeof variants] || "bg-gray-600 text-white"
-  }
-
-  const getIFRSBadge = (level: string) => {
-    const variants = {
-      "Level 1": "bg-green-600 text-white",
-      "Level 2": "bg-blue-600 text-white",
-      "Level 3": "bg-orange-600 text-white",
-      "Pending": "bg-yellow-600 text-white",
-      "N/A": "bg-gray-600 text-white"
-    }
-    return variants[level as keyof typeof variants] || "bg-gray-600 text-white"
-  }
-
-  const filteredRuns = runs.filter(run => {
-    const matchesSearch = run.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         run.instrument.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         run.createdBy.name.toLowerCase().includes(searchTerm.toLowerCase())
     
-    const matchesInstrumentType = filters.instrumentType === "All Types" || run.instrument.type === filters.instrumentType
-    const matchesStatus = filters.runStatus === "All Statuses" || run.status === filters.runStatus
-    const matchesCurrency = filters.currency === "All Currencies" || run.currency === filters.currency
-    
-    return matchesSearch && matchesInstrumentType && matchesStatus && matchesCurrency
-  })
+    return (
+      <Badge className={variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-8 py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-white mb-2">Valuation Runs</h1>
-            <p className="text-gray-300">Manage and monitor your valuation runs</p>
-          </div>
-          
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Valuation Runs</h1>
+          <p className="text-gray-600 mt-2">
+            Manage and monitor your valuation calculations
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            onClick={handleCreateRun}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Run
+          </Button>
+          <Button variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters and Search */}
+      <Card>
+        <CardContent className="p-6">
           <div className="flex items-center space-x-4">
-            <div className="flex space-x-2">
-              <Button 
-                onClick={handleNewIRSRun}
-                className="bg-green-600 hover:bg-green-700 text-black font-medium"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New IRS Run
-              </Button>
-              <Button 
-                onClick={handleNewCCSRun}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
-              >
-                <ArrowLeftRight className="w-4 h-4 mr-2" />
-                New CCS Run
-              </Button>
-              <Button 
-                onClick={handleExportList}
-                className="bg-gray-700 hover:bg-gray-600 text-white font-medium"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export List
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex">
-        {/* Main Content */}
-        <div className="flex-1 px-8 py-6">
-          {/* Search and Filters */}
-          <div className="mb-6">
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search runs by ID, instrument, or creator..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                  />
-                </div>
-              </div>
-              <Button 
-                onClick={() => setShowFilters(!showFilters)}
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                Filters
-              </Button>
-            </div>
-
-            {/* Advanced Filters */}
-            {showFilters && (
-              <Card className="bg-gray-800 border-gray-700 mb-4">
-                <CardHeader>
-                  <CardTitle className="text-white">Advanced Filters</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label className="text-gray-300">Instrument Type</Label>
-                      <Select value={filters.instrumentType} onValueChange={(value) => setFilters({...filters, instrumentType: value})}>
-                        <SelectTrigger className="bg-gray-700 border-gray-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="All Types">All Types</SelectItem>
-                          <SelectItem value="IRS">IRS</SelectItem>
-                          <SelectItem value="CCS">CCS</SelectItem>
-                          <SelectItem value="Cap">Cap</SelectItem>
-                          <SelectItem value="Swaption">Swaption</SelectItem>
-                          <SelectItem value="FRA">FRA</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-gray-300">Status</Label>
-                      <Select value={filters.runStatus} onValueChange={(value) => setFilters({...filters, runStatus: value})}>
-                        <SelectTrigger className="bg-gray-700 border-gray-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="All Statuses">All Statuses</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="running">Running</SelectItem>
-                          <SelectItem value="queued">Queued</SelectItem>
-                          <SelectItem value="failed">Failed</SelectItem>
-                          <SelectItem value="review_required">Review Required</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-gray-300">Currency</Label>
-                      <Select value={filters.currency} onValueChange={(value) => setFilters({...filters, currency: value})}>
-                        <SelectTrigger className="bg-gray-700 border-gray-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="All Currencies">All Currencies</SelectItem>
-                          <SelectItem value="USD">USD</SelectItem>
-                          <SelectItem value="EUR">EUR</SelectItem>
-                          <SelectItem value="GBP">GBP</SelectItem>
-                          <SelectItem value="CHF">CHF</SelectItem>
-                          <SelectItem value="JPY">JPY</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Active Filters */}
-            {activeFilters.length > 0 && (
-              <div className="flex items-center space-x-2 mb-4">
-                <span className="text-sm text-gray-300">Active filters:</span>
-                {activeFilters.map((filter, index) => (
-                  <Badge key={index} variant="secondary" className="bg-gray-700 text-gray-300">
-                    {filter}
-                    <button 
-                      onClick={() => setActiveFilters(prev => prev.filter((_, i) => i !== index))}
-                      className="ml-2 hover:text-white"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Bulk Operations */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  checked={selectedRuns.length === runs.length}
-                  onCheckedChange={handleSelectAll}
-                  className="border-gray-600"
-                />
-                <span className="text-sm text-gray-300">
-                  Select All ({runs.length})
-                </span>
-              </div>
-              
-              {selectedRuns.length > 0 && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-300">
-                    {selectedRuns.length} selected
-                  </span>
-                  <Button 
-                    onClick={handleRestartSelected}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                    Restart Selected
-                  </Button>
-                  <Button 
-                    onClick={handleCancelSelected}
-                    size="sm"
-                    className="bg-orange-600 hover:bg-orange-700 text-white"
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pause className="w-4 h-4" />}
-                    Cancel Selected
-                  </Button>
-                  <Button 
-                    onClick={handleExportSelected}
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Download className="w-4 h-4" />
-                    Export Selected
-                  </Button>
-                  <Button 
-                    onClick={handleDeleteSelected}
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete Selected
-                  </Button>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-300">Density:</span>
-                <Select value={density} onValueChange={(value: "compact" | "normal" | "comfortable") => setDensity(value)}>
-                  <SelectTrigger className="w-32 bg-gray-700 border-gray-600">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="compact">Compact</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="comfortable">Comfortable</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Runs Table */}
-          <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-700">
-                    <TableHead className="w-12"></TableHead>
-                    <TableHead>Instrument</TableHead>
-                    <TableHead>As-of Date</TableHead>
-                    <TableHead>Approach</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>IFRS Level</TableHead>
-                    <TableHead>Present Value</TableHead>
-                    <TableHead>Notional</TableHead>
-                    <TableHead>Created By</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Timestamp</TableHead>
-                    <TableHead className="w-12"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRuns.map((run) => (
-                    <TableRow key={run.id} className="border-gray-700 hover:bg-gray-700/50">
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedRuns.includes(run.id)}
-                          onCheckedChange={() => handleRunSelect(run.id)}
-                          className="border-gray-600"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-blue-600 bg-opacity-20 rounded-lg flex items-center justify-center">
-                            <BarChart3 className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <div className="text-white font-medium">{run.instrument.name}</div>
-                            <div className="text-sm text-gray-400">{run.instrument.description}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-gray-300">{run.asOfDate}</TableCell>
-                      <TableCell className="text-gray-300">{run.approach}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {getStatusIcon(run.status)}
-                          <Badge className={getStatusBadge(run.status)}>
-                            {run.status.replace('_', ' ')}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getIFRSBadge(run.ifrsLevel)}>
-                          {run.ifrsLevel}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {run.pv !== null ? (
-                          <span className="text-white font-medium">
-                            ${run.pv.toLocaleString()}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-gray-300">{run.notional}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <img 
-                            src={run.createdBy.avatar} 
-                            alt={run.createdBy.name}
-                            className="w-6 h-6 rounded-full"
-                          />
-                          <div>
-                            <div className="text-white text-sm">{run.createdBy.name}</div>
-                            <div className="text-gray-400 text-xs">{run.createdBy.role}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-gray-300">{run.duration}</TableCell>
-                      <TableCell className="text-gray-300">{run.timestamp}</TableCell>
-                      <TableCell>
-                        <Button 
-                          onClick={() => handleViewRun(run.id)}
-                          size="sm"
-                          variant="ghost"
-                          className="text-gray-400 hover:text-white"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-gray-400">
-              Showing {filteredRuns.length} of {runs.length} runs
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* AI Chat Panel */}
-        {showChat && (
-          <div className="w-80 bg-gray-800 border-l border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">AI Assistant</h3>
-              <Button 
-                onClick={() => setShowChat(false)}
-                size="sm"
-                variant="ghost"
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            <div className="h-96 bg-gray-700 rounded-lg p-4 overflow-y-auto mb-4">
-              {chatMessages.length === 0 ? (
-                <div className="text-center text-gray-400">
-                  <Bot className="w-8 h-8 mx-auto mb-2" />
-                  <p>Ask me about your runs, valuations, or IFRS-13 compliance.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {chatMessages.map((message) => (
-                    <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-xs p-3 rounded-lg ${
-                        message.role === 'user' 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-gray-600 text-gray-200'
-                      }`}>
-                        <p className="text-sm">{message.content}</p>
-                        <p className="text-xs opacity-70 mt-1">
-                          {message.timestamp.toLocaleTimeString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex space-x-2">
-              <Input
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask about your runs..."
-                className="bg-gray-700 border-gray-600 text-white"
-                onKeyPress={(e) => e.key === 'Enter' && handleChatSubmit()}
-              />
-              <Button 
-                onClick={handleChatSubmit}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* New Run Dialog */}
-      <Dialog open={showNewRunDialog} onOpenChange={setShowNewRunDialog}>
-        <DialogContent className="bg-gray-800 border-gray-700 text-white">
-          <DialogHeader>
-            <DialogTitle>Create New {selectedRunType} Run</DialogTitle>
-            <DialogDescription>
-              Configure the parameters for your new valuation run.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="notional" className="text-gray-300">Notional Amount</Label>
+            <div className="flex-1">
+              <Label htmlFor="search">Search</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  id="notional"
-                  value={runConfig.notional}
-                  onChange={(e) => setRunConfig({...runConfig, notional: e.target.value})}
-                  placeholder="10,000,000"
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
-              </div>
-              <div>
-                <Label htmlFor="currency" className="text-gray-300">Currency</Label>
-                <Select value={runConfig.currency} onValueChange={(value) => setRunConfig({...runConfig, currency: value})}>
-                  <SelectTrigger className="bg-gray-700 border-gray-600">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
-                    <SelectItem value="CHF">CHF</SelectItem>
-                    <SelectItem value="JPY">JPY</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tenor" className="text-gray-300">Tenor</Label>
-                <Select value={runConfig.tenor} onValueChange={(value) => setRunConfig({...runConfig, tenor: value})}>
-                  <SelectTrigger className="bg-gray-700 border-gray-600">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1Y">1 Year</SelectItem>
-                    <SelectItem value="2Y">2 Years</SelectItem>
-                    <SelectItem value="5Y">5 Years</SelectItem>
-                    <SelectItem value="10Y">10 Years</SelectItem>
-                    <SelectItem value="30Y">30 Years</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="fixedRate" className="text-gray-300">Fixed Rate (%)</Label>
-                <Input
-                  id="fixedRate"
-                  value={runConfig.fixedRate}
-                  onChange={(e) => setRunConfig({...runConfig, fixedRate: e.target.value})}
-                  placeholder="3.50"
-                  className="bg-gray-700 border-gray-600 text-white"
+                  id="search"
+                  placeholder="Search runs..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="floatingIndex" className="text-gray-300">Floating Index</Label>
-              <Select value={runConfig.floatingIndex} onValueChange={(value) => setRunConfig({...runConfig, floatingIndex: value})}>
-                <SelectTrigger className="bg-gray-700 border-gray-600">
-                  <SelectValue />
+            <div className="w-48">
+              <Label htmlFor="status">Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SOFR">SOFR</SelectItem>
-                  <SelectItem value="LIBOR">LIBOR</SelectItem>
-                  <SelectItem value="EURIBOR">EURIBOR</SelectItem>
-                  <SelectItem value="TONA">TONA</SelectItem>
-                  <SelectItem value="€STR">€STR</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="running">Running</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="queued">Queued</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button 
-                onClick={() => setShowNewRunDialog(false)}
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleStartRun}
-                className="bg-green-600 hover:bg-green-700 text-black"
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Starting...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 mr-2" />
-                    Start Run
-                  </>
-                )}
-              </Button>
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </CardContent>
+      </Card>
 
-      {/* Export Dialog */}
-      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-        <DialogContent className="bg-gray-800 border-gray-700 text-white">
+      {/* Actions Bar */}
+      {selectedRuns.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">
+                {selectedRuns.length} run(s) selected
+              </span>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDeleteRuns}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Runs Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Valuation Runs ({filteredRuns.length})</CardTitle>
+          <CardDescription>
+            View and manage your valuation calculations
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedRuns.length === filteredRuns.length && filteredRuns.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead>Instrument</TableHead>
+                  <TableHead>As Of Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Present Value</TableHead>
+                  <TableHead>Created By</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead className="w-12">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRuns.map((run) => (
+                  <TableRow key={run.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedRuns.includes(run.id)}
+                        onCheckedChange={() => handleSelectRun(run.id)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">{run.instrument.icon}</span>
+                        <div>
+                          <div className="font-medium">{run.instrument.name}</div>
+                          <div className="text-sm text-gray-500">{run.instrument.description}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{run.asOfDate}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        {getStatusIcon(run.status)}
+                        {getStatusBadge(run.status)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {run.status === "completed" ? (
+                        <span className="font-mono">
+                          {run.pv.toLocaleString()} {run.currency}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{run.createdBy}</TableCell>
+                    <TableCell>
+                      {new Date(run.createdAt).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewRun(run.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {run.status === "completed" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownloadRun(run.id)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Create Run Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Export Runs</DialogTitle>
+            <DialogTitle>Create New Valuation Run</DialogTitle>
             <DialogDescription>
-              Choose the format and options for your export.
+              Configure and start a new valuation calculation
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label className="text-gray-300">Export Format</Label>
-              <div className="grid grid-cols-2 gap-4 mt-2">
-                <Button 
-                  onClick={() => handleExport('excel')}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Excel (.xlsx)
-                </Button>
-                <Button 
-                  onClick={() => handleExport('csv')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  CSV (.csv)
-                </Button>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="instrument">Instrument Type</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select instrument" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="irs">Interest Rate Swap (IRS)</SelectItem>
+                    <SelectItem value="ccs">Cross Currency Swap (CCS)</SelectItem>
+                    <SelectItem value="cap">Interest Rate Cap</SelectItem>
+                    <SelectItem value="swaption">Swaption</SelectItem>
+                    <SelectItem value="fra">Forward Rate Agreement (FRA)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="asOfDate">As Of Date</Label>
+                <Input
+                  id="asOfDate"
+                  type="date"
+                  defaultValue={new Date().toISOString().split('T')[0]}
+                />
               </div>
             </div>
             <div>
-              <Label className="text-gray-300">Include</Label>
-              <div className="space-y-2 mt-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox defaultChecked className="border-gray-600" />
-                  <span className="text-sm text-gray-300">Run details</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox defaultChecked className="border-gray-600" />
-                  <span className="text-sm text-gray-300">Present values</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox className="border-gray-600" />
-                  <span className="text-sm text-gray-300">Sensitivities</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox className="border-gray-600" />
-                  <span className="text-sm text-gray-300">Cashflows</span>
-                </div>
-              </div>
+              <Label htmlFor="marketData">Market Data Profile</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select market data" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="synthetic">Synthetic</SelectItem>
+                  <SelectItem value="ecb">ECB</SelectItem>
+                  <SelectItem value="fred">FRED</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="computeXva" />
+              <Label htmlFor="computeXva">Compute XVA (CVA, DVA, FVA)</Label>
             </div>
             <div className="flex justify-end space-x-2">
-              <Button 
-                onClick={() => setShowExportDialog(false)}
-                variant="outline"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                 Cancel
+              </Button>
+              <Button onClick={() => setShowCreateDialog(false)}>
+                Create Run
               </Button>
             </div>
           </div>

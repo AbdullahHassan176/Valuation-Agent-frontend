@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { PrintButton } from './_components/PrintButton'
+import { AnimatedParticles } from './_components/AnimatedParticles'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -85,7 +86,6 @@ import {
   Smartphone,
   Tablet,
   Laptop,
-  Desktop,
   Headphones,
   Mic,
   MicOff,
@@ -103,16 +103,11 @@ import {
   Keyboard,
   HardDrive,
   Cpu,
-  Memory,
   Disc,
-  Cd,
-  Dvd,
   Usb,
   Bluetooth,
   Router,
-  Modem,
-  Switch,
-  Hub,
+  ToggleLeft,
   Network,
   Link,
   Link2,
@@ -129,13 +124,8 @@ import {
   Store,
   Factory,
   Warehouse,
-  Office,
   School,
-  Hospital,
-  Bank,
   Church,
-  Mosque,
-  Temple,
   Castle,
   Tent,
   Car,
@@ -145,12 +135,7 @@ import {
   Plane,
   Ship,
   Bike,
-  Scooter,
-  Motorcycle,
-  Taxi,
-  Ambulance,
-  Fire,
-  Police,
+  Flame,
   ShieldCheck
 } from 'lucide-react'
 
@@ -194,6 +179,15 @@ export default function DashboardPage() {
     setShowUploadDialog(true)
   }
 
+  const handleNewRun = () => {
+    // Simulate starting a new run
+    console.log('Starting new run:', { type: selectedRunType, config: runConfig })
+    setShowNewRunDialog(false)
+    setRunConfig({ notional: '', currency: 'USD', tenor: '5Y', fixedRate: '', floatingIndex: 'SOFR' })
+    // Navigate to runs page or show success message
+    router.push('/runs')
+  }
+
   const handleStartRun = () => {
     // Simulate starting a new run
     console.log('Starting new run:', { type: selectedRunType, config: runConfig })
@@ -201,6 +195,13 @@ export default function DashboardPage() {
     setRunConfig({ notional: '', currency: 'USD', tenor: '5Y', fixedRate: '', floatingIndex: 'SOFR' })
     // Navigate to runs page or show success message
     router.push('/runs')
+  }
+
+  const handleUpload = () => {
+    // Simulate document upload
+    console.log('Uploading document...')
+    setShowUploadDialog(false)
+    // Show success message or navigate to processing page
   }
 
   const handleUploadDocument = () => {
@@ -245,13 +246,84 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Dashboard Header */}
-      <section className="bg-gray-800 border-b border-gray-700 px-8 py-6">
+    <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
+      <AnimatedParticles />
+      
+      {/* Hero Section */}
+      <section className="relative z-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-20 px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="mb-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-2xl mx-auto mb-6">
+              <span className="text-white font-bold text-3xl">D</span>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 bg-gradient-to-r from-white via-green-100 to-green-300 bg-clip-text text-transparent">
+              Deloitte Valuation Platform
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Advanced Financial Risk Management & Compliance Platform for Interest Rate Swaps, 
+              Cross-Currency Swaps, and Complex Derivative Instruments
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                onClick={handleNewRun}
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                <Play className="w-5 h-5 mr-2" />
+                Start New Valuation
+              </Button>
+              <Button 
+                onClick={handleUpload}
+                variant="outline"
+                className="border-2 border-green-500 text-green-400 hover:bg-green-500 hover:text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                <Upload className="w-5 h-5 mr-2" />
+                Upload Documents
+              </Button>
+            </div>
+          </div>
+          
+          {/* Key Features */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-green-500/50 transition-all duration-300">
+              <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="w-6 h-6 text-green-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Advanced Analytics</h3>
+              <p className="text-gray-400">Real-time risk metrics and comprehensive valuation analytics</p>
+            </div>
+            
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-green-500/50 transition-all duration-300">
+              <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-6 h-6 text-green-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">IFRS-13 Compliance</h3>
+              <p className="text-gray-400">Automated compliance validation and audit trail generation</p>
+            </div>
+            
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-green-500/50 transition-all duration-300">
+              <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Bot className="w-6 h-6 text-green-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">AI-Powered Insights</h3>
+              <p className="text-gray-400">Intelligent document analysis and automated risk assessment</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Professional Header with Deloitte Branding */}
+      <section className="bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700 px-8 py-8 relative z-10">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-white mb-2">Dashboard Overview</h1>
-            <p className="text-gray-300">Monitor valuation runs, system performance, and recent activity</p>
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-xl">D</span>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Deloitte Valuation Platform
+              </h1>
+              <p className="text-gray-300 text-lg">Advanced Financial Risk Management & Compliance</p>
+            </div>
           </div>
           
           <div className="flex items-center space-x-4">
@@ -288,7 +360,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Key Performance Indicators */}
-      <section className="px-8 py-6">
+      <section className="px-8 py-6 relative z-10">
         <h2 className="text-xl font-semibold text-white mb-6">Key Performance Indicators</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -388,7 +460,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Quick Actions */}
-      <section className="px-8 py-6">
+      <section className="px-8 py-6 relative z-10">
         <h2 className="text-xl font-semibold text-white mb-6">Quick Actions</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -484,7 +556,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Recent Activity */}
-      <section className="px-8 py-6">
+      <section className="px-8 py-6 relative z-10">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">Recent Activity</h2>
           <div className="flex space-x-2">
@@ -639,7 +711,7 @@ export default function DashboardPage() {
       </section>
 
       {/* System Alerts */}
-      <section className="px-8 py-6">
+      <section className="px-8 py-6 relative z-10">
         <h2 className="text-xl font-semibold text-white mb-6">System Alerts & Notifications</h2>
         
         <div className="space-y-4">

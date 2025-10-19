@@ -45,7 +45,6 @@ import {
   Circle,
   ShieldCheck,
   Flag as FlagIcon,
-  EllipsisH,
   Cog,
   ArrowUp,
   ArrowDown,
@@ -492,7 +491,6 @@ export default function GovernancePage() {
       AlertTriangle,
       Calculator,
       Book,
-      Building,
       Building,
       Flag,
       ShieldCheck
