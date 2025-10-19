@@ -125,6 +125,13 @@ export default function DashboardPage() {
     router.push('/runs')
   }
 
+  const handleStartRun = () => {
+    console.log('Starting new run:', { type: selectedRunType, config: runConfig })
+    setShowNewRunDialog(false)
+    setRunConfig({ notional: '', currency: 'USD', tenor: '5Y', fixedRate: '', floatingIndex: 'SOFR' })
+    router.push('/runs')
+  }
+
   const handleUpload = () => {
     console.log('Uploading contract')
     setShowUploadDialog(false)
@@ -143,7 +150,7 @@ export default function DashboardPage() {
     }
   }
 
-  // Mock data
+  // Mock data for comprehensive dashboard
   const recentRuns = [
     { id: 'run-001', name: 'USD 5Y IRS', status: 'completed', pv: 125000, currency: 'USD', time: '2 min ago' },
     { id: 'run-002', name: 'EUR/USD CCS', status: 'running', pv: 0, currency: 'USD', time: '5 min ago' },
@@ -157,6 +164,28 @@ export default function DashboardPage() {
     systemHealth: 'excellent'
   }
 
+  const marketData = {
+    usdOis: { rate: 4.25, change: 0.02 },
+    eurOis: { rate: 3.15, change: -0.01 },
+    gbpOis: { rate: 4.85, change: 0.03 },
+    fxUsdEur: { rate: 1.0850, change: 0.0015 }
+  }
+
+  const alerts = [
+    { id: 1, type: 'warning', message: 'Market data update required for EUR curves', time: '5 min ago' },
+    { id: 2, type: 'info', message: 'New IFRS-13 compliance update available', time: '1 hour ago' },
+    { id: 3, type: 'success', message: 'Backup completed successfully', time: '2 hours ago' }
+  ]
+
+  const quickActions = [
+    { name: 'New IRS Run', icon: ArrowLeftRight, color: 'blue', action: handleNewIRSRun },
+    { name: 'New CCS Run', icon: ArrowLeftRight, color: 'green', action: handleNewCCSRun },
+    { name: 'Upload Contract', icon: Upload, color: 'purple', action: handleUploadContract },
+    { name: 'Market Data', icon: TrendingUp, color: 'orange', action: () => router.push('/curves') },
+    { name: 'Analytics', icon: BarChart3, color: 'red', action: () => router.push('/runs') },
+    { name: 'Settings', icon: Settings, color: 'gray', action: () => router.push('/settings') }
+  ]
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
       {/* Animated Background */}
@@ -164,7 +193,7 @@ export default function DashboardPage() {
       
       {/* Main Content */}
       <div className="relative z-10">
-        {/* Hero Section - Mobile Optimized */}
+        {/* Hero Section */}
         <div className="text-center py-8 sm:py-12 px-4">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-center mb-4">
@@ -200,43 +229,21 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Actions - Mobile Grid */}
+        {/* Quick Actions Grid */}
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300">
-              <CardContent className="p-4 text-center">
-                <Play className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-                <h3 className="text-sm font-semibold text-white mb-1">Start Run</h3>
-                <p className="text-xs text-gray-300">New valuation</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300">
-              <CardContent className="p-4 text-center">
-                <Upload className="h-8 w-8 text-green-400 mx-auto mb-2" />
-                <h3 className="text-sm font-semibold text-white mb-1">Upload</h3>
-                <p className="text-xs text-gray-300">Documents</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300">
-              <CardContent className="p-4 text-center">
-                <BarChart3 className="h-8 w-8 text-purple-400 mx-auto mb-2" />
-                <h3 className="text-sm font-semibold text-white mb-1">Analytics</h3>
-                <p className="text-xs text-gray-300">Reports</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300">
-              <CardContent className="p-4 text-center">
-                <MessageCircle className="h-8 w-8 text-orange-400 mx-auto mb-2" />
-                <h3 className="text-sm font-semibold text-white mb-1">Chat</h3>
-                <p className="text-xs text-gray-300">Assistant</p>
-              </CardContent>
-            </Card>
+            {quickActions.map((action, index) => (
+              <Card key={index} className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300 cursor-pointer" onClick={action.action}>
+                <CardContent className="p-4 text-center">
+                  <action.icon className={`h-8 w-8 text-${action.color}-400 mx-auto mb-2`} />
+                  <h3 className="text-sm font-semibold text-white mb-1">{action.name}</h3>
+                  <p className="text-xs text-gray-300">Quick access</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
-          {/* Stats Cards - Mobile Stack */}
+          {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
               <CardContent className="p-4">
@@ -277,18 +284,20 @@ export default function DashboardPage() {
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-300">System Health</p>
-                    <p className="text-lg font-bold text-green-400 capitalize">{systemStatus.systemHealth}</p>
-                  </div>
-                  <ShieldCheck className="h-8 w-8 text-green-400" />
+                <div>
+                  <p className="text-sm text-gray-300">System Health</p>
+                  <p className="text-lg font-bold text-green-400 capitalize">{systemStatus.systemHealth}</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <ShieldCheck className="h-8 w-8 text-green-400" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Recent Runs - Mobile Optimized */}
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Runs */}
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20 lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-white">Recent Runs</CardTitle>
               <CardDescription className="text-gray-300">Latest valuation calculations</CardDescription>
@@ -335,139 +344,214 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Market Data */}
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white">Market Data</CardTitle>
+              <CardDescription className="text-gray-300">Current rates and spreads</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-300">USD OIS</span>
+                  <div className="text-right">
+                    <span className="text-white font-medium">{marketData.usdOis.rate}%</span>
+                    <span className="text-green-400 text-xs ml-2">+{marketData.usdOis.change}bp</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-300">EUR OIS</span>
+                  <div className="text-right">
+                    <span className="text-white font-medium">{marketData.eurOis.rate}%</span>
+                    <span className="text-red-400 text-xs ml-2">{marketData.eurOis.change}bp</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-300">GBP OIS</span>
+                  <div className="text-right">
+                    <span className="text-white font-medium">{marketData.gbpOis.rate}%</span>
+                    <span className="text-green-400 text-xs ml-2">+{marketData.gbpOis.change}bp</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-300">USD/EUR</span>
+                  <div className="text-right">
+                    <span className="text-white font-medium">{marketData.fxUsdEur.rate}</span>
+                    <span className="text-green-400 text-xs ml-2">+{marketData.fxUsdEur.change}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Button 
+                  onClick={() => router.push('/curves')}
+                  variant="outline" 
+                  className="w-full border-white/20 text-white hover:bg-white/10"
+                >
+                  View Curves
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Alerts */}
+        <Card className="bg-white/10 backdrop-blur-sm border-white/20 mt-6">
+          <CardHeader>
+            <CardTitle className="text-white">System Alerts</CardTitle>
+            <CardDescription className="text-gray-300">Recent notifications and updates</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {alerts.map((alert) => (
+                <div key={alert.id} className="flex items-start space-x-3 p-3 bg-white/5 rounded-lg">
+                  <div className={`w-2 h-2 rounded-full mt-2 ${
+                    alert.type === 'warning' ? 'bg-yellow-400' :
+                    alert.type === 'info' ? 'bg-blue-400' :
+                    'bg-green-400'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white">{alert.message}</p>
+                    <p className="text-xs text-gray-400">{alert.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
+    </div>
 
-      {/* New Run Dialog - Mobile Optimized */}
-      <Dialog open={showNewRunDialog} onOpenChange={setShowNewRunDialog}>
-        <DialogContent className="sm:max-w-md mx-4">
-          <DialogHeader>
-            <DialogTitle>New {selectedRunType} Run</DialogTitle>
-            <DialogDescription>
-              Configure your {selectedRunType} valuation parameters
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="notional">Notional</Label>
-                <Input
-                  id="notional"
-                  placeholder="1000000"
-                  value={runConfig.notional}
-                  onChange={(e) => setRunConfig({...runConfig, notional: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="currency">Currency</Label>
-                <Select value={runConfig.currency} onValueChange={(value) => setRunConfig({...runConfig, currency: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tenor">Tenor</Label>
-                <Select value={runConfig.tenor} onValueChange={(value) => setRunConfig({...runConfig, tenor: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1Y">1Y</SelectItem>
-                    <SelectItem value="3Y">3Y</SelectItem>
-                    <SelectItem value="5Y">5Y</SelectItem>
-                    <SelectItem value="10Y">10Y</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="fixedRate">Fixed Rate (%)</Label>
-                <Input
-                  id="fixedRate"
-                  placeholder="3.5"
-                  value={runConfig.fixedRate}
-                  onChange={(e) => setRunConfig({...runConfig, fixedRate: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleNewRun} className="flex-1">
-                Start Run
-              </Button>
-              <Button variant="outline" onClick={() => setShowNewRunDialog(false)} className="flex-1">
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Upload Dialog - Mobile Optimized */}
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-md mx-4">
-          <DialogHeader>
-            <DialogTitle>Upload Contract</DialogTitle>
-            <DialogDescription>
-              Upload your financial contract for analysis
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-sm text-gray-600 mb-2">Drag and drop your contract here</p>
-              <p className="text-xs text-gray-500">or click to browse</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleUpload} className="flex-1">
-                Upload
-              </Button>
-              <Button variant="outline" onClick={() => setShowUploadDialog(false)} className="flex-1">
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Chat Dialog - Mobile Optimized */}
-      <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
-        <DialogContent className="sm:max-w-md mx-4">
-          <DialogHeader>
-            <DialogTitle>Chat Assistant</DialogTitle>
-            <DialogDescription>
-              Ask questions about your valuations
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="chatMessage">Message</Label>
+    {/* New Run Dialog */}
+    <Dialog open={showNewRunDialog} onOpenChange={setShowNewRunDialog}>
+      <DialogContent className="sm:max-w-md mx-4">
+        <DialogHeader>
+          <DialogTitle>New {selectedRunType} Run</DialogTitle>
+          <DialogDescription>
+            Configure your {selectedRunType} valuation parameters
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="notional">Notional</Label>
               <Input
-                id="chatMessage"
-                placeholder="Ask about your valuation..."
-                value={chatMessage}
-                onChange={(e) => setChatMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                id="notional"
+                placeholder="1000000"
+                value={runConfig.notional}
+                onChange={(e) => setRunConfig({...runConfig, notional: e.target.value})}
               />
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleSendMessage} className="flex-1">
-                <Send className="h-4 w-4 mr-2" />
-                Send
-              </Button>
-              <Button variant="outline" onClick={() => setShowChatDialog(false)} className="flex-1">
-                Cancel
-              </Button>
+            <div>
+              <Label htmlFor="currency">Currency</Label>
+              <Select value={runConfig.currency} onValueChange={(value) => setRunConfig({...runConfig, currency: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
+                  <SelectItem value="GBP">GBP</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="tenor">Tenor</Label>
+              <Select value={runConfig.tenor} onValueChange={(value) => setRunConfig({...runConfig, tenor: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1Y">1Y</SelectItem>
+                  <SelectItem value="3Y">3Y</SelectItem>
+                  <SelectItem value="5Y">5Y</SelectItem>
+                  <SelectItem value="10Y">10Y</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="fixedRate">Fixed Rate (%)</Label>
+              <Input
+                id="fixedRate"
+                placeholder="3.5"
+                value={runConfig.fixedRate}
+                onChange={(e) => setRunConfig({...runConfig, fixedRate: e.target.value})}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button onClick={handleNewRun} className="flex-1">
+              Start Run
+            </Button>
+            <Button variant="outline" onClick={() => setShowNewRunDialog(false)} className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Upload Dialog */}
+    <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+      <DialogContent className="sm:max-w-md mx-4">
+        <DialogHeader>
+          <DialogTitle>Upload Contract</DialogTitle>
+          <DialogDescription>
+            Upload your financial contract for analysis
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-sm text-gray-600 mb-2">Drag and drop your contract here</p>
+            <p className="text-xs text-gray-500">or click to browse</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button onClick={handleUpload} className="flex-1">
+              Upload
+            </Button>
+            <Button variant="outline" onClick={() => setShowUploadDialog(false)} className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Chat Dialog */}
+    <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
+      <DialogContent className="sm:max-w-md mx-4">
+        <DialogHeader>
+          <DialogTitle>Chat Assistant</DialogTitle>
+          <DialogDescription>
+            Ask questions about your valuations
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="chatMessage">Message</Label>
+            <Input
+              id="chatMessage"
+              placeholder="Ask about your valuation..."
+              value={chatMessage}
+              onChange={(e) => setChatMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button onClick={handleSendMessage} className="flex-1">
+              <Send className="h-4 w-4 mr-2" />
+              Send
+            </Button>
+            <Button variant="outline" onClick={() => setShowChatDialog(false)} className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </div>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Alert } from "@/components/ui/alert"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -50,30 +50,6 @@ import {
   X,
   Check,
   Loader2,
-  Search,
-  Calendar,
-  User,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  Shield,
-  Database,
-  Server,
-  Cloud,
-  Zap,
-  Target,
-  PieChart,
-  LineChart,
-  BarChart,
-  Layers,
-  Globe,
-  Lock,
-  Unlock,
-  Key,
-  Bell,
-  MessageCircle,
-  HelpCircle,
   Star,
   Heart,
   ThumbsUp,
@@ -96,104 +72,217 @@ import {
   Ship,
   Bike,
   Flame,
-  ShieldCheck
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  PieChart,
+  LineChart,
+  Target,
+  Globe,
+  Lock,
+  Key,
+  Bell,
+  MessageCircle,
+  HelpCircle,
+  Shield,
+  ShieldCheck,
+  Zap,
+  Search,
+  User,
+  Archive
 } from "lucide-react"
 
 interface ValuationRun {
   id: string
-  instrument: {
-    name: string
-    type: "IRS" | "CCS" | "Cap" | "Swaption" | "FRA"
-    description: string
-    icon: string
-  }
-  asOfDate: string
-  status: "completed" | "running" | "failed" | "queued"
-  pv: number
+  name: string
+  type: 'IRS' | 'CCS'
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  notional: number
   currency: string
-  createdBy: string
-  createdAt: string
-  completedAt?: string
-  errorMessage?: string
-  approach: string[]
-  marketDataProfile: string
-  xvaConfig?: {
-    computeCva: boolean
-    computeDva: boolean
-    computeFva: boolean
-  }
+  tenor: string
+  fixedRate?: number
+  floatingIndex?: string
+  pv?: number
+  pv01?: number
+  created_at: string
+  completed_at?: string
+  error?: string
+  progress?: number
 }
 
 export default function RunsPage() {
   const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [runs, setRuns] = useState<ValuationRun[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showNewRunDialog, setShowNewRunDialog] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
   const [selectedRuns, setSelectedRuns] = useState<string[]>([])
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-
-  // Mock data - replace with actual API calls
-  const runs: ValuationRun[] = [
-    {
-      id: "run-001",
-      instrument: {
-        name: "USD 5Y IRS",
-        type: "IRS",
-        description: "5-year USD Interest Rate Swap",
-        icon: "📈"
-      },
-      asOfDate: "2024-01-15",
-      status: "completed",
-      pv: 125000.50,
-      currency: "USD",
-      createdBy: "john.doe@company.com",
-      createdAt: "2024-01-15T09:30:00Z",
-      completedAt: "2024-01-15T09:32:15Z",
-      approach: ["OIS_discounting"],
-      marketDataProfile: "synthetic"
-    },
-    {
-      id: "run-002",
-      instrument: {
-        name: "EUR/USD CCS",
-        type: "CCS",
-        description: "Cross Currency Swap EUR/USD",
-        icon: "🌍"
-      },
-      asOfDate: "2024-01-15",
-      status: "running",
-      pv: 0,
-      currency: "USD",
-      createdBy: "jane.smith@company.com",
-      createdAt: "2024-01-15T10:15:00Z",
-      approach: ["OIS_discounting_with_FX"],
-      marketDataProfile: "synthetic"
-    },
-    {
-      id: "run-003",
-      instrument: {
-        name: "GBP 3Y IRS",
-        type: "IRS",
-        description: "3-year GBP Interest Rate Swap",
-        icon: "💷"
-      },
-      asOfDate: "2024-01-15",
-      status: "failed",
-      pv: 0,
-      currency: "GBP",
-      createdBy: "mike.wilson@company.com",
-      createdAt: "2024-01-15T11:00:00Z",
-      errorMessage: "Invalid market data for GBP",
-      approach: ["OIS_discounting"],
-      marketDataProfile: "synthetic"
-    }
-  ]
-
-  const filteredRuns = runs.filter(run => {
-    const matchesSearch = run.instrument.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         run.instrument.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || run.status === statusFilter
-    return matchesSearch && matchesStatus
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [typeFilter, setTypeFilter] = useState("all")
+  const [sortBy, setSortBy] = useState("created_at")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [runsPerPage] = useState(10)
+  
+  // New run form state
+  const [newRun, setNewRun] = useState({
+    name: "",
+    type: "IRS" as "IRS" | "CCS",
+    notional: "",
+    currency: "USD",
+    tenor: "5Y",
+    fixedRate: "",
+    floatingIndex: "SOFR"
   })
+
+  useEffect(() => {
+    fetchRuns()
+  }, [])
+
+  const fetchRuns = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Mock data
+      const mockRuns: ValuationRun[] = [
+        {
+          id: "run-001",
+          name: "USD 5Y IRS - Par Trade",
+          type: "IRS",
+          status: "completed",
+          notional: 10000000,
+          currency: "USD",
+          tenor: "5Y",
+          fixedRate: 4.25,
+          floatingIndex: "SOFR-3M",
+          pv: 125000,
+          pv01: 4500,
+          created_at: "2024-01-15T10:30:00Z",
+          completed_at: "2024-01-15T10:32:15Z"
+        },
+        {
+          id: "run-002",
+          name: "EUR/USD CCS - Cross Currency",
+          type: "CCS",
+          status: "running",
+          notional: 5000000,
+          currency: "EUR",
+          tenor: "3Y",
+          floatingIndex: "EURIBOR-3M",
+          progress: 65,
+          created_at: "2024-01-15T11:15:00Z"
+        },
+        {
+          id: "run-003",
+          name: "GBP 10Y IRS - Long Term",
+          type: "IRS",
+          status: "failed",
+          notional: 25000000,
+          currency: "GBP",
+          tenor: "10Y",
+          fixedRate: 3.85,
+          floatingIndex: "SONIA-6M",
+          error: "Market data unavailable for GBP curves",
+          created_at: "2024-01-15T09:45:00Z"
+        },
+        {
+          id: "run-004",
+          name: "USD 2Y IRS - Short Term",
+          type: "IRS",
+          status: "completed",
+          notional: 15000000,
+          currency: "USD",
+          tenor: "2Y",
+          fixedRate: 4.15,
+          floatingIndex: "SOFR-1M",
+          pv: -85000,
+          pv01: 2800,
+          created_at: "2024-01-15T08:20:00Z",
+          completed_at: "2024-01-15T08:22:30Z"
+        },
+        {
+          id: "run-005",
+          name: "JPY/USD CCS - Asian Markets",
+          type: "CCS",
+          status: "pending",
+          notional: 1000000000,
+          currency: "JPY",
+          tenor: "5Y",
+          floatingIndex: "TONA-3M",
+          created_at: "2024-01-15T12:00:00Z"
+        }
+      ]
+      
+      setRuns(mockRuns)
+    } catch (err) {
+      setError("Failed to fetch runs")
+      console.error("Error fetching runs:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleNewRun = async () => {
+    try {
+      const runData = {
+        ...newRun,
+        notional: parseFloat(newRun.notional),
+        fixedRate: newRun.fixedRate ? parseFloat(newRun.fixedRate) : undefined
+      }
+      
+      console.log("Creating new run:", runData)
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      const newRunData: ValuationRun = {
+        id: `run-${Date.now()}`,
+        name: runData.name || `${runData.currency} ${runData.tenor} ${runData.type}`,
+        type: runData.type,
+        status: "pending",
+        notional: runData.notional,
+        currency: runData.currency,
+        tenor: runData.tenor,
+        fixedRate: runData.fixedRate,
+        floatingIndex: runData.floatingIndex,
+        created_at: new Date().toISOString()
+      }
+      
+      setRuns(prev => [newRunData, ...prev])
+      setShowNewRunDialog(false)
+      setNewRun({
+        name: "",
+        type: "IRS",
+        notional: "",
+        currency: "USD",
+        tenor: "5Y",
+        fixedRate: "",
+        floatingIndex: "SOFR"
+      })
+    } catch (err) {
+      setError("Failed to create run")
+      console.error("Error creating run:", err)
+    }
+  }
+
+  const handleViewRun = (runId: string) => {
+    router.push(`/runs/run-detail?id=${runId}`)
+  }
+
+  const handleDeleteRun = (runId: string) => {
+    setRuns(prev => prev.filter(run => run.id !== runId))
+  }
+
+  const handleBulkDelete = () => {
+    setRuns(prev => prev.filter(run => !selectedRuns.includes(run.id)))
+    setSelectedRuns([])
+  }
 
   const handleSelectRun = (runId: string) => {
     setSelectedRuns(prev => 
@@ -204,367 +293,568 @@ export default function RunsPage() {
   }
 
   const handleSelectAll = () => {
-    setSelectedRuns(
-      selectedRuns.length === filteredRuns.length 
-        ? [] 
-        : filteredRuns.map(run => run.id)
-    )
-  }
-
-  const handleCreateRun = () => {
-    setShowCreateDialog(true)
-  }
-
-  const handleViewRun = (runId: string) => {
-    router.push(`/runs/run-detail?id=${runId}`)
-  }
-
-  const handleDownloadRun = (runId: string) => {
-    console.log("Downloading run:", runId)
-  }
-
-  const handleDeleteRuns = () => {
-    console.log("Deleting runs:", selectedRuns)
-    setSelectedRuns([])
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "running":
-        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
-      case "failed":
-        return <XCircle className="h-4 w-4 text-red-500" />
-      case "queued":
-        return <Clock className="h-4 w-4 text-yellow-500" />
-      default:
-        return <AlertCircle className="h-4 w-4 text-gray-500" />
+    if (selectedRuns.length === filteredRuns.length) {
+      setSelectedRuns([])
+    } else {
+      setSelectedRuns(filteredRuns.map(run => run.id))
     }
   }
+
+  // Filter and sort runs
+  const filteredRuns = runs
+    .filter(run => {
+      const matchesSearch = run.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           run.id.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesStatus = statusFilter === "all" || run.status === statusFilter
+      const matchesType = typeFilter === "all" || run.type === typeFilter
+      return matchesSearch && matchesStatus && matchesType
+    })
+    .sort((a, b) => {
+      let comparison = 0
+      switch (sortBy) {
+        case "name":
+          comparison = a.name.localeCompare(b.name)
+          break
+        case "status":
+          comparison = a.status.localeCompare(b.status)
+          break
+        case "created_at":
+          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          break
+        case "pv":
+          comparison = (a.pv || 0) - (b.pv || 0)
+          break
+        default:
+          comparison = 0
+      }
+      return sortOrder === "asc" ? comparison : -comparison
+    })
+
+  const totalPages = Math.ceil(filteredRuns.length / runsPerPage)
+  const paginatedRuns = filteredRuns.slice(
+    (currentPage - 1) * runsPerPage,
+    currentPage * runsPerPage
+  )
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      completed: "bg-green-100 text-green-800",
-      running: "bg-blue-100 text-blue-800",
-      failed: "bg-red-100 text-red-800",
-      queued: "bg-yellow-100 text-yellow-800"
+    switch (status) {
+      case "completed":
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>
+      case "running":
+        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30"><Clock className="h-3 w-3 mr-1" />Running</Badge>
+      case "failed":
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>
+      case "pending":
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30"><Timer className="h-3 w-3 mr-1" />Pending</Badge>
+      default:
+        return <Badge variant="secondary">{status}</Badge>
     }
-    
+  }
+
+  const getTypeBadge = (type: string) => {
     return (
-      <Badge className={variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <Badge className={type === "IRS" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" : "bg-green-500/20 text-green-400 border-green-500/30"}>
+        {type}
       </Badge>
     )
   }
 
-  return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header - Mobile Optimized */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Valuation Runs</h1>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">
-            Manage and monitor your valuation calculations
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <Button
-            onClick={handleCreateRun}
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Run
-          </Button>
-          <Button variant="outline" className="w-full sm:w-auto">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-lg">Loading runs...</p>
         </div>
       </div>
+    )
+  }
 
-      {/* Filters and Search - Mobile Stack */}
-      <Card>
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-            <div className="flex-1">
-              <Label htmlFor="search" className="text-sm">Search</Label>
-              <div className="relative mt-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="search"
-                  placeholder="Search runs..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="w-full sm:w-48">
-              <Label htmlFor="status" className="text-sm">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="running">Running</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="queued">Queued</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Valuation Runs</h1>
+            <p className="text-gray-300 mt-2">Manage and monitor your financial instrument valuations</p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0">
+            <Button onClick={() => setShowNewRunDialog(true)} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              New Run
+            </Button>
+            <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
+            <Button variant="outline" onClick={fetchRuns}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+        </div>
 
-      {/* Actions Bar - Mobile Optimized */}
-      {selectedRuns.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <span className="text-sm text-gray-600">
-                {selectedRuns.length} run(s) selected
-              </span>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
+        {/* Search Bar */}
+        <Card className="mb-6 bg-gray-800 border-gray-700">
+          <CardContent className="py-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search runs by name or ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setSearchTerm("")}>
+                  Clear
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleDeleteRuns} className="w-full sm:w-auto">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+                <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+                  <Filter className="h-4 w-4 mr-2" />
+                  Advanced Filters
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Runs List - Mobile Cards */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Valuation Runs ({filteredRuns.length})</h2>
-        </div>
-        
-        {/* Mobile Card View */}
-        <div className="block sm:hidden space-y-3">
-          {filteredRuns.map((run) => (
-            <Card key={run.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      checked={selectedRuns.includes(run.id)}
-                      onCheckedChange={() => handleSelectRun(run.id)}
-                    />
-                    <span className="text-2xl">{run.instrument.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm truncate">{run.instrument.name}</h3>
-                      <p className="text-xs text-gray-500 truncate">{run.instrument.description}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {getStatusIcon(run.status)}
-                    {getStatusBadge(run.status)}
-                  </div>
+        {/* Filters */}
+        {showFilters && (
+          <Card className="mb-6 bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">Filters & Search</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="search">Search</Label>
+                  <Input
+                    id="search"
+                    placeholder="Search runs..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">As Of:</span>
-                    <span>{run.asOfDate}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">PV:</span>
-                    <span className="font-mono">
-                      {run.status === "completed" ? `${run.pv.toLocaleString()} ${run.currency}` : "-"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Created:</span>
-                    <span className="text-xs">{new Date(run.createdAt).toLocaleDateString()}</span>
-                  </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="running">Running</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                
-                <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                  <span className="text-xs text-gray-500">{run.createdBy}</span>
-                  <div className="flex items-center space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewRun(run.id)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    {run.status === "completed" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownloadRun(run.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                <div>
+                  <Label htmlFor="type">Type</Label>
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="IRS">IRS</SelectItem>
+                      <SelectItem value="CCS">CCS</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <div>
+                  <Label htmlFor="sort">Sort By</Label>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="created_at">Created Date</SelectItem>
+                      <SelectItem value="name">Name</SelectItem>
+                      <SelectItem value="status">Status</SelectItem>
+                      <SelectItem value="pv">Present Value</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Desktop Table View */}
-        <div className="hidden sm:block">
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={selectedRuns.length === filteredRuns.length && filteredRuns.length > 0}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead>Instrument</TableHead>
-                      <TableHead>As Of Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Present Value</TableHead>
-                      <TableHead>Created By</TableHead>
-                      <TableHead>Created At</TableHead>
-                      <TableHead className="w-12">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredRuns.map((run) => (
-                      <TableRow key={run.id}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedRuns.includes(run.id)}
-                            onCheckedChange={() => handleSelectRun(run.id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <span className="text-2xl">{run.instrument.icon}</span>
-                            <div>
-                              <div className="font-medium">{run.instrument.name}</div>
-                              <div className="text-sm text-gray-500">{run.instrument.description}</div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{run.asOfDate}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            {getStatusIcon(run.status)}
-                            {getStatusBadge(run.status)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {run.status === "completed" ? (
-                            <span className="font-mono">
-                              {run.pv.toLocaleString()} {run.currency}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{run.createdBy}</TableCell>
-                        <TableCell>
-                          {new Date(run.createdAt).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewRun(run.id)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {run.status === "completed" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDownloadRun(run.id)}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+        {/* Bulk Actions */}
+        {selectedRuns.length > 0 && (
+          <Card className="mb-6 border-blue-200 bg-blue-50">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-blue-800">
+                    {selectedRuns.length} run{selectedRuns.length > 1 ? 's' : ''} selected
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setSelectedRuns([])}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Clear Selection
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleBulkDelete} className="text-red-600 border-red-300 hover:bg-red-50">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Selected
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-green-600 border-green-300 hover:bg-green-50">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Selected
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-blue-600 border-blue-300 hover:bg-blue-50">
+                    <Share className="h-4 w-4 mr-2" />
+                    Share Selected
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Summary Statistics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-300">Total Runs</p>
+                  <p className="text-2xl font-bold text-white">{runs.length}</p>
+                </div>
+                <FileText className="h-8 w-8 text-blue-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-300">Completed</p>
+                  <p className="text-2xl font-bold text-green-400">{runs.filter(r => r.status === 'completed').length}</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-300">Running</p>
+                  <p className="text-2xl font-bold text-blue-400">{runs.filter(r => r.status === 'running').length}</p>
+                </div>
+                <Clock className="h-8 w-8 text-blue-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-300">Failed</p>
+                  <p className="text-2xl font-bold text-red-400">{runs.filter(r => r.status === 'failed').length}</p>
+                </div>
+                <XCircle className="h-8 w-8 text-red-400" />
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Runs Table with Tabs */}
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-white">All Runs ({filteredRuns.length})</CardTitle>
+                <CardDescription className="text-gray-300">Manage your valuation calculations</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={selectedRuns.length === filteredRuns.length && filteredRuns.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm text-gray-300">Select All</span>
+              </div>
+            </div>
+            <Tabs defaultValue="all" className="w-full">
+              <TabsList className="grid w-full grid-cols-4 bg-gray-700">
+                <TabsTrigger value="all" className="data-[state=active]:bg-gray-600 data-[state=active]:text-white">All Runs</TabsTrigger>
+                <TabsTrigger value="my" className="data-[state=active]:bg-gray-600 data-[state=active]:text-white">My Runs</TabsTrigger>
+                <TabsTrigger value="recent" className="data-[state=active]:bg-gray-600 data-[state=active]:text-white">Recent</TabsTrigger>
+                <TabsTrigger value="archived" className="data-[state=active]:bg-gray-600 data-[state=active]:text-white">Archived</TabsTrigger>
+              </TabsList>
+              <TabsContent value="all" className="mt-4">
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-gray-700">
+                    <TableHead className="w-12 text-gray-300">Select</TableHead>
+                    <TableHead className="text-gray-300">Name</TableHead>
+                    <TableHead className="text-gray-300">Type</TableHead>
+                    <TableHead className="text-gray-300">Status</TableHead>
+                    <TableHead className="text-gray-300">Notional</TableHead>
+                    <TableHead className="text-gray-300">PV</TableHead>
+                    <TableHead className="text-gray-300">PV01</TableHead>
+                    <TableHead className="text-gray-300">Created</TableHead>
+                    <TableHead className="w-20 text-gray-300">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedRuns.map((run) => (
+                    <TableRow key={run.id} className="border-gray-700 hover:bg-gray-700/50">
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedRuns.includes(run.id)}
+                          onCheckedChange={() => handleSelectRun(run.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-white">{run.name}</div>
+                          <div className="text-sm text-gray-400">{run.id}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getTypeBadge(run.type)}</TableCell>
+                      <TableCell>{getStatusBadge(run.status)}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-white">{run.notional.toLocaleString()}</div>
+                          <div className="text-sm text-gray-400">{run.currency}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {run.pv !== undefined ? (
+                          <div className={`font-medium ${run.pv >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {run.pv.toLocaleString()} {run.currency}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {run.pv01 !== undefined ? (
+                          <div className="font-medium text-white">{run.pv01.toLocaleString()}</div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-white">
+                          {new Date(run.created_at).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {new Date(run.created_at).toLocaleTimeString()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewRun(run.id)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteRun(run.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-gray-600">
+                  Showing {((currentPage - 1) * runsPerPage) + 1} to {Math.min(currentPage * runsPerPage, filteredRuns.length)} of {filteredRuns.length} runs
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+              </TabsContent>
+              <TabsContent value="my" className="mt-4">
+                <div className="text-center py-8 text-gray-500">
+                  <User className="h-12 w-12 mx-auto mb-4" />
+                  <p>My runs will appear here</p>
+                </div>
+              </TabsContent>
+              <TabsContent value="recent" className="mt-4">
+                <div className="text-center py-8 text-gray-500">
+                  <Clock className="h-12 w-12 mx-auto mb-4" />
+                  <p>Recent runs will appear here</p>
+                </div>
+              </TabsContent>
+              <TabsContent value="archived" className="mt-4">
+                <div className="text-center py-8 text-gray-500">
+                  <Archive className="h-12 w-12 mx-auto mb-4" />
+                  <p>Archived runs will appear here</p>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardHeader>
+        </Card>
+
+        {/* Error Alert */}
+        {error && (
+          <Alert className="mt-6" variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
       </div>
 
-      {/* Create Run Dialog - Mobile Optimized */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-2xl mx-4">
+      {/* New Run Dialog */}
+      <Dialog open={showNewRunDialog} onOpenChange={setShowNewRunDialog}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create New Valuation Run</DialogTitle>
+            <DialogTitle>Create New Run</DialogTitle>
             <DialogDescription>
-              Configure and start a new valuation calculation
+              Configure your valuation parameters
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Run Name</Label>
+              <Input
+                id="name"
+                placeholder="Enter run name..."
+                value={newRun.name}
+                onChange={(e) => setNewRun({...newRun, name: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="instrument">Instrument Type</Label>
-                <Select>
+                <Label htmlFor="type">Type</Label>
+                <Select value={newRun.type} onValueChange={(value: "IRS" | "CCS") => setNewRun({...newRun, type: value})}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select instrument" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="irs">Interest Rate Swap (IRS)</SelectItem>
-                    <SelectItem value="ccs">Cross Currency Swap (CCS)</SelectItem>
-                    <SelectItem value="cap">Interest Rate Cap</SelectItem>
-                    <SelectItem value="swaption">Swaption</SelectItem>
-                    <SelectItem value="fra">Forward Rate Agreement (FRA)</SelectItem>
+                    <SelectItem value="IRS">Interest Rate Swap</SelectItem>
+                    <SelectItem value="CCS">Cross Currency Swap</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="asOfDate">As Of Date</Label>
-                <Input
-                  id="asOfDate"
-                  type="date"
-                  defaultValue={new Date().toISOString().split('T')[0]}
-                />
+                <Label htmlFor="currency">Currency</Label>
+                <Select value={newRun.currency} onValueChange={(value) => setNewRun({...newRun, currency: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                    <SelectItem value="JPY">JPY</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <div>
-              <Label htmlFor="marketData">Market Data Profile</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select market data" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="synthetic">Synthetic</SelectItem>
-                  <SelectItem value="ecb">ECB</SelectItem>
-                  <SelectItem value="fred">FRED</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="notional">Notional Amount</Label>
+                <Input
+                  id="notional"
+                  type="number"
+                  placeholder="1000000"
+                  value={newRun.notional}
+                  onChange={(e) => setNewRun({...newRun, notional: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="tenor">Tenor</Label>
+                <Select value={newRun.tenor} onValueChange={(value) => setNewRun({...newRun, tenor: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1Y">1 Year</SelectItem>
+                    <SelectItem value="2Y">2 Years</SelectItem>
+                    <SelectItem value="3Y">3 Years</SelectItem>
+                    <SelectItem value="5Y">5 Years</SelectItem>
+                    <SelectItem value="10Y">10 Years</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="computeXva" />
-              <Label htmlFor="computeXva">Compute XVA (CVA, DVA, FVA)</Label>
-            </div>
+            {newRun.type === "IRS" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="fixedRate">Fixed Rate (%)</Label>
+                  <Input
+                    id="fixedRate"
+                    type="number"
+                    step="0.01"
+                    placeholder="3.5"
+                    value={newRun.fixedRate}
+                    onChange={(e) => setNewRun({...newRun, fixedRate: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="floatingIndex">Floating Index</Label>
+                  <Select value={newRun.floatingIndex} onValueChange={(value) => setNewRun({...newRun, floatingIndex: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SOFR">SOFR</SelectItem>
+                      <SelectItem value="EURIBOR">EURIBOR</SelectItem>
+                      <SelectItem value="SONIA">SONIA</SelectItem>
+                      <SelectItem value="TONA">TONA</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="flex-1">
-                Cancel
-              </Button>
-              <Button onClick={() => setShowCreateDialog(false)} className="flex-1">
+              <Button onClick={handleNewRun} className="flex-1">
                 Create Run
+              </Button>
+              <Button variant="outline" onClick={() => setShowNewRunDialog(false)} className="flex-1">
+                Cancel
               </Button>
             </div>
           </div>
