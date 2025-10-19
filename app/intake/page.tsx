@@ -48,6 +48,7 @@ import {
   User,
   FileEdit
 } from "lucide-react"
+import { parseContract, parseContractFile, ExtractResponse } from "@/src/lib/poc"
 
 interface UploadedFile {
   id: string
@@ -106,6 +107,10 @@ export default function IntakePage() {
       uploadedAt: '5 minutes ago'
     }
   ])
+
+  const [pocExtractResult, setPocExtractResult] = useState<ExtractResponse | null>(null)
+  const [pocLoading, setPocLoading] = useState(false)
+  const [pocError, setPocError] = useState<string | null>(null)
 
   const [extractedFields, setExtractedFields] = useState<ExtractedField[]>([
     {
@@ -327,6 +332,45 @@ export default function IntakePage() {
     return <IconComponent className="w-4 h-4 text-green-600" />
   }
 
+  const handlePoCExtract = async () => {
+    setPocLoading(true)
+    setPocError(null)
+    setPocExtractResult(null)
+
+    try {
+      const result = await parseContract({
+        text: "Sample contract text for PoC extraction",
+        instrument_hint: "IRS",
+        ccy_hint: "USD"
+      })
+      
+      setPocExtractResult(result)
+    } catch (error) {
+      setPocError(error instanceof Error ? error.message : 'PoC extraction failed')
+    } finally {
+      setPocLoading(false)
+    }
+  }
+
+  const handlePoCFileExtract = async (file: File) => {
+    setPocLoading(true)
+    setPocError(null)
+    setPocExtractResult(null)
+
+    try {
+      const result = await parseContractFile(file, {
+        instrument_hint: "IRS",
+        ccy_hint: "USD"
+      })
+      
+      setPocExtractResult(result)
+    } catch (error) {
+      setPocError(error instanceof Error ? error.message : 'PoC file extraction failed')
+    } finally {
+      setPocLoading(false)
+    }
+  }
+
   const handleChatSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!chatInput.trim()) return
@@ -385,6 +429,19 @@ export default function IntakePage() {
             <Button className="bg-gray-700 hover:bg-gray-600 text-white font-medium">
               <History className="w-4 h-4 mr-2" />
               View History
+            </Button>
+            
+            <Button 
+              onClick={handlePoCExtract}
+              disabled={pocLoading}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+            >
+              {pocLoading ? (
+                <Clock className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Bot className="w-4 h-4 mr-2" />
+              )}
+              Extract Terms (PoC)
             </Button>
           </div>
         </div>
@@ -1289,6 +1346,88 @@ export default function IntakePage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* PoC Results */}
+      {pocExtractResult && (
+        <section className="px-8 py-6">
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold text-white flex items-center">
+                <Bot className="w-5 h-5 mr-2 text-blue-400" />
+                PoC Extraction Results
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-gray-300">Status:</span>
+                    <Badge className={`ml-2 ${
+                      pocExtractResult.status === 'OK' 
+                        ? 'bg-green-600 text-white' 
+                        : 'bg-yellow-600 text-white'
+                    }`}>
+                      {pocExtractResult.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-300">Confidence:</span>
+                    <span className="ml-2 text-white font-medium">
+                      {(pocExtractResult.confidence * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+                
+                {pocExtractResult.fields.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-medium text-white mb-3">Extracted Fields</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {pocExtractResult.fields.map((field, index) => (
+                        <div key={index} className="bg-gray-700 rounded-lg p-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-medium text-white">{field.key}</div>
+                              <div className="text-sm text-gray-300">{field.value}</div>
+                            </div>
+                            <Badge className="bg-blue-600 text-white text-xs">
+                              {(field.confidence * 100).toFixed(0)}%
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {pocExtractResult.warnings.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-medium text-white mb-3">Warnings</h4>
+                    <div className="space-y-2">
+                      {pocExtractResult.warnings.map((warning, index) => (
+                        <Alert key={index} className="bg-yellow-600 bg-opacity-20 border-yellow-600">
+                          <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                          <AlertDescription className="text-yellow-200">{warning}</AlertDescription>
+                        </Alert>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      )}
+
+      {pocError && (
+        <section className="px-8 py-6">
+          <Alert className="bg-red-600 bg-opacity-20 border-red-600">
+            <AlertTriangle className="h-4 w-4 text-red-400" />
+            <AlertDescription className="text-red-200">
+              PoC Error: {pocError}
+            </AlertDescription>
+          </Alert>
+        </section>
       )}
 
       {/* Chat Toggle Button */}

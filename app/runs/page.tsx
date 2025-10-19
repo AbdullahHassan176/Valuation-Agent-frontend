@@ -220,12 +220,10 @@ export default function RunsPage() {
   }
 
   const handleDownloadRun = (runId: string) => {
-    // Implement download functionality
     console.log("Downloading run:", runId)
   }
 
   const handleDeleteRuns = () => {
-    // Implement delete functionality
     console.log("Deleting runs:", selectedRuns)
     setSelectedRuns([])
   }
@@ -261,37 +259,37 @@ export default function RunsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Valuation Runs</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold">Valuation Runs</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
             Manage and monitor your valuation calculations
           </p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Button
             onClick={handleCreateRun}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
           >
             <Plus className="h-4 w-4 mr-2" />
             New Run
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" className="w-full sm:w-auto">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* Filters and Search */}
+      {/* Filters and Search - Mobile Stack */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
             <div className="flex-1">
-              <Label htmlFor="search">Search</Label>
-              <div className="relative">
+              <Label htmlFor="search" className="text-sm">Search</Label>
+              <div className="relative mt-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="search"
@@ -302,10 +300,10 @@ export default function RunsPage() {
                 />
               </div>
             </div>
-            <div className="w-48">
-              <Label htmlFor="status">Status</Label>
+            <div className="w-full sm:w-48">
+              <Label htmlFor="status" className="text-sm">Status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -321,20 +319,20 @@ export default function RunsPage() {
         </CardContent>
       </Card>
 
-      {/* Actions Bar */}
+      {/* Actions Bar - Mobile Optimized */}
       {selectedRuns.length > 0 && (
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <span className="text-sm text-gray-600">
                 {selectedRuns.length} run(s) selected
               </span>
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto">
                   <Download className="h-4 w-4 mr-2" />
                   Download
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleDeleteRuns}>
+                <Button variant="outline" size="sm" onClick={handleDeleteRuns} className="w-full sm:w-auto">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
@@ -344,103 +342,174 @@ export default function RunsPage() {
         </Card>
       )}
 
-      {/* Runs Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Valuation Runs ({filteredRuns.length})</CardTitle>
-          <CardDescription>
-            View and manage your valuation calculations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
+      {/* Runs List - Mobile Cards */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Valuation Runs ({filteredRuns.length})</h2>
+        </div>
+        
+        {/* Mobile Card View */}
+        <div className="block sm:hidden space-y-3">
+          {filteredRuns.map((run) => (
+            <Card key={run.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
                     <Checkbox
-                      checked={selectedRuns.length === filteredRuns.length && filteredRuns.length > 0}
-                      onCheckedChange={handleSelectAll}
+                      checked={selectedRuns.includes(run.id)}
+                      onCheckedChange={() => handleSelectRun(run.id)}
                     />
-                  </TableHead>
-                  <TableHead>Instrument</TableHead>
-                  <TableHead>As Of Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Present Value</TableHead>
-                  <TableHead>Created By</TableHead>
-                  <TableHead>Created At</TableHead>
-                  <TableHead className="w-12">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRuns.map((run) => (
-                  <TableRow key={run.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedRuns.includes(run.id)}
-                        onCheckedChange={() => handleSelectRun(run.id)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <span className="text-2xl">{run.instrument.icon}</span>
-                        <div>
-                          <div className="font-medium">{run.instrument.name}</div>
-                          <div className="text-sm text-gray-500">{run.instrument.description}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{run.asOfDate}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(run.status)}
-                        {getStatusBadge(run.status)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {run.status === "completed" ? (
-                        <span className="font-mono">
-                          {run.pv.toLocaleString()} {run.currency}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{run.createdBy}</TableCell>
-                    <TableCell>
-                      {new Date(run.createdAt).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewRun(run.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {run.status === "completed" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDownloadRun(run.id)}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                    <span className="text-2xl">{run.instrument.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm truncate">{run.instrument.name}</h3>
+                      <p className="text-xs text-gray-500 truncate">{run.instrument.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {getStatusIcon(run.status)}
+                    {getStatusBadge(run.status)}
+                  </div>
+                </div>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">As Of:</span>
+                    <span>{run.asOfDate}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">PV:</span>
+                    <span className="font-mono">
+                      {run.status === "completed" ? `${run.pv.toLocaleString()} ${run.currency}` : "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Created:</span>
+                    <span className="text-xs">{new Date(run.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                  <span className="text-xs text-gray-500">{run.createdBy}</span>
+                  <div className="flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewRun(run.id)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    {run.status === "completed" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownloadRun(run.id)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-      {/* Create Run Dialog */}
+        {/* Desktop Table View */}
+        <div className="hidden sm:block">
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selectedRuns.length === filteredRuns.length && filteredRuns.length > 0}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </TableHead>
+                      <TableHead>Instrument</TableHead>
+                      <TableHead>As Of Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Present Value</TableHead>
+                      <TableHead>Created By</TableHead>
+                      <TableHead>Created At</TableHead>
+                      <TableHead className="w-12">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRuns.map((run) => (
+                      <TableRow key={run.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedRuns.includes(run.id)}
+                            onCheckedChange={() => handleSelectRun(run.id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <span className="text-2xl">{run.instrument.icon}</span>
+                            <div>
+                              <div className="font-medium">{run.instrument.name}</div>
+                              <div className="text-sm text-gray-500">{run.instrument.description}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{run.asOfDate}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {getStatusIcon(run.status)}
+                            {getStatusBadge(run.status)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {run.status === "completed" ? (
+                            <span className="font-mono">
+                              {run.pv.toLocaleString()} {run.currency}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{run.createdBy}</TableCell>
+                        <TableCell>
+                          {new Date(run.createdAt).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewRun(run.id)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {run.status === "completed" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownloadRun(run.id)}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Create Run Dialog - Mobile Optimized */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-2xl mx-4">
           <DialogHeader>
             <DialogTitle>Create New Valuation Run</DialogTitle>
             <DialogDescription>
@@ -448,7 +517,7 @@ export default function RunsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="instrument">Instrument Type</Label>
                 <Select>
@@ -490,11 +559,11 @@ export default function RunsPage() {
               <Checkbox id="computeXva" />
               <Label htmlFor="computeXva">Compute XVA (CVA, DVA, FVA)</Label>
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="flex-1">
                 Cancel
               </Button>
-              <Button onClick={() => setShowCreateDialog(false)}>
+              <Button onClick={() => setShowCreateDialog(false)} className="flex-1">
                 Create Run
               </Button>
             </div>

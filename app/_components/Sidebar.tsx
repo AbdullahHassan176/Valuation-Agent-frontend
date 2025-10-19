@@ -27,6 +27,7 @@ import {
 interface SidebarProps {
   isCollapsed: boolean
   onToggle: () => void
+  isMobile?: boolean
 }
 
 const navigationItems = [
@@ -118,46 +119,48 @@ const navigationItems = [
   },
 ]
 
-export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
+export function Sidebar({ isCollapsed, onToggle, isMobile = false }: SidebarProps) {
   const pathname = usePathname()
 
   return (
     <div className={cn(
       "flex h-full flex-col border-r bg-card transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64"
+      isMobile ? "w-full" : isCollapsed ? "w-16" : "w-64"
     )}>
-      {/* Header */}
-      <div className="flex h-16 items-center justify-between px-4 border-b">
-        {!isCollapsed && (
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded bg-brand-green flex items-center justify-center">
-              <span className="text-white font-bold text-xs">VA</span>
+      {/* Header - Hidden on mobile */}
+      {!isMobile && (
+        <div className="flex h-16 items-center justify-between px-4 border-b">
+          {!isCollapsed && (
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded bg-brand-green flex items-center justify-center">
+                <span className="text-white font-bold text-xs">VA</span>
+              </div>
+              <span className="font-semibold">Valuation Agent</span>
             </div>
-            <span className="font-semibold">Valuation Agent</span>
-          </div>
-        )}
-        
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggle}
-          className="h-8 w-8"
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
           )}
-        </Button>
-      </div>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggle}
+            className="h-8 w-8"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      )}
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-2 py-4">
         <nav className="space-y-6">
           {navigationItems.map((section, sectionIndex) => (
             <div key={section.title}>
-              {!isCollapsed && (
+              {(!isCollapsed || isMobile) && (
                 <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   {section.title}
                 </h3>
@@ -172,19 +175,19 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                       <Button
                         variant={isActive ? "secondary" : "ghost"}
                         className={cn(
-                          "w-full justify-start h-9",
-                          isCollapsed ? "px-2" : "px-3",
+                          "w-full justify-start h-10 sm:h-9",
+                          (isCollapsed && !isMobile) ? "px-2" : "px-3",
                           isActive && "bg-secondary text-secondary-foreground"
                         )}
                         aria-label={`Navigate to ${item.title}`}
                         aria-current={isActive ? "page" : undefined}
                       >
-                        <Icon className={cn("h-4 w-4", isCollapsed ? "mx-auto" : "mr-3")} />
-                        {!isCollapsed && (
+                        <Icon className={cn("h-4 w-4", (isCollapsed && !isMobile) ? "mx-auto" : "mr-3")} />
+                        {(!isCollapsed || isMobile) && (
                           <>
-                            <span className="flex-1 text-left">{item.title}</span>
+                            <span className="flex-1 text-left text-sm sm:text-base">{item.title}</span>
                             {item.badge && (
-                              <Badge variant="secondary" className="ml-auto">
+                              <Badge variant="secondary" className="ml-auto text-xs">
                                 {item.badge}
                               </Badge>
                             )}
@@ -203,25 +206,27 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </nav>
       </ScrollArea>
 
-      {/* Chat Panel Toggle */}
-      <div className="p-2 border-t">
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full justify-start",
-            isCollapsed ? "px-2" : "px-3"
-          )}
-          aria-label="Open chat assistant"
-          onClick={() => {
-            // Dispatch event to open chat panel
-            const event = new CustomEvent('toggleChat', { detail: { open: true } })
-            window.dispatchEvent(event)
-          }}
-        >
-          <MessageSquare className={cn("h-4 w-4", isCollapsed ? "mx-auto" : "mr-3")} />
-          {!isCollapsed && <span>Chat Assistant</span>}
-        </Button>
-      </div>
+      {/* Chat Panel Toggle - Hidden on mobile */}
+      {!isMobile && (
+        <div className="p-2 border-t">
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-start",
+              isCollapsed ? "px-2" : "px-3"
+            )}
+            aria-label="Open chat assistant"
+            onClick={() => {
+              // Dispatch event to open chat panel
+              const event = new CustomEvent('toggleChat', { detail: { open: true } })
+              window.dispatchEvent(event)
+            }}
+          >
+            <MessageSquare className={cn("h-4 w-4", isCollapsed ? "mx-auto" : "mr-3")} />
+            {!isCollapsed && <span>Chat Assistant</span>}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

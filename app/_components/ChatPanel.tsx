@@ -99,7 +99,16 @@ export function ChatPanel() {
   if (!isOpen) return null
 
   return (
-    <div className="fixed right-0 top-0 h-full w-96 bg-gray-800 border-l border-gray-700 shadow-2xl z-50 flex flex-col">
+    <>
+      {/* Mobile Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+        onClick={() => setIsOpen(false)}
+      />
+      
+      <div className={`fixed right-0 top-0 h-full bg-gray-800 border-l border-gray-700 shadow-2xl z-50 flex flex-col transition-all duration-300 ${
+        isOpen ? 'w-full sm:w-96' : 'w-0 overflow-hidden'
+      }`}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-900">
         <div className="flex items-center space-x-3">
@@ -229,6 +238,7 @@ export function ChatPanel() {
           </div>
         </>
       )}
-    </div>
+      </div>
+    </>
   )
 }

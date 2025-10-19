@@ -167,12 +167,10 @@ export default function RunDetailPage() {
   }
 
   const handleDownload = () => {
-    // Implement download functionality
     console.log("Downloading run:", run?.id)
   }
 
   const handleShare = () => {
-    // Implement share functionality
     console.log("Sharing run:", run?.id)
   }
 
@@ -208,7 +206,7 @@ export default function RunDetailPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 sm:p-6">
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
         </div>
@@ -218,7 +216,7 @@ export default function RunDetailPage() {
 
   if (error || !run) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 sm:p-6">
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
@@ -230,41 +228,42 @@ export default function RunDetailPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={handleBack}>
+          <Button variant="outline" onClick={handleBack} className="shrink-0">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Runs
+            <span className="hidden sm:inline">Back to Runs</span>
+            <span className="sm:hidden">Back</span>
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">{run.instrument.name}</h1>
-            <p className="text-gray-600">{run.instrument.description}</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-3xl font-bold truncate">{run.instrument.name}</h1>
+            <p className="text-gray-600 text-sm sm:text-base truncate">{run.instrument.description}</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleDownload}>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleDownload} className="flex-1 sm:flex-none">
             <Download className="h-4 w-4 mr-2" />
-            Download
+            <span className="hidden sm:inline">Download</span>
           </Button>
-          <Button variant="outline" onClick={handleShare}>
+          <Button variant="outline" onClick={handleShare} className="flex-1 sm:flex-none">
             <Share className="h-4 w-4 mr-2" />
-            Share
+            <span className="hidden sm:inline">Share</span>
           </Button>
         </div>
       </div>
 
-      {/* Status and Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Status and Overview - Mobile Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-base">
               {getStatusIcon(run.status)}
               <span>Status</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {getStatusBadge(run.status)}
             {run.status === "completed" && run.completedAt && (
               <p className="text-sm text-gray-600 mt-2">
@@ -275,14 +274,14 @@ export default function RunDetailPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-base">
               <DollarSign className="h-5 w-5" />
               <span>Present Value</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="pt-0">
+            <div className="text-xl sm:text-2xl font-bold">
               {run.pv.toLocaleString()} {run.currency}
             </div>
             {run.results?.pvBreakdown.sensitivities && (
@@ -293,14 +292,14 @@ export default function RunDetailPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+        <Card className="sm:col-span-2 lg:col-span-1">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-base">
               <Calendar className="h-5 w-5" />
               <span>As Of Date</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <div className="text-lg font-semibold">{run.asOfDate}</div>
             <div className="text-sm text-gray-600">
               Created: {new Date(run.createdAt).toLocaleString()}
@@ -309,51 +308,53 @@ export default function RunDetailPage() {
         </Card>
       </div>
 
-      {/* Results Tabs */}
+      {/* Results Tabs - Mobile Optimized */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="cashflows">Cashflows</TabsTrigger>
-          <TabsTrigger value="sensitivities">Sensitivities</TabsTrigger>
-          <TabsTrigger value="details">Details</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+          <TabsTrigger value="cashflows" className="text-xs sm:text-sm">Cashflows</TabsTrigger>
+          <TabsTrigger value="sensitivities" className="text-xs sm:text-sm">Sensitivities</TabsTrigger>
+          <TabsTrigger value="details" className="text-xs sm:text-sm">Details</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle>PV Breakdown</CardTitle>
+                <CardTitle className="text-base">PV Breakdown</CardTitle>
               </CardHeader>
               <CardContent>
-                {run.results?.pvBreakdown.legs.map((leg, index) => (
-                  <div key={index} className="flex justify-between items-center py-2 border-b">
-                    <span>{leg.name}</span>
-                    <span className="font-mono">{leg.pv.toLocaleString()} {run.currency}</span>
+                <div className="space-y-2">
+                  {run.results?.pvBreakdown.legs.map((leg, index) => (
+                    <div key={index} className="flex justify-between items-center py-2 border-b">
+                      <span className="text-sm">{leg.name}</span>
+                      <span className="font-mono text-sm">{leg.pv.toLocaleString()} {run.currency}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center py-2 font-bold border-t">
+                    <span>Total PV</span>
+                    <span className="font-mono">{run.pv.toLocaleString()} {run.currency}</span>
                   </div>
-                ))}
-                <div className="flex justify-between items-center py-2 font-bold">
-                  <span>Total PV</span>
-                  <span className="font-mono">{run.pv.toLocaleString()} {run.currency}</span>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Configuration</CardTitle>
+                <CardTitle className="text-base">Configuration</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span>Market Data:</span>
                   <span>{run.marketDataProfile}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span>Approach:</span>
-                  <span>{run.approach.join(", ")}</span>
+                  <span className="text-right">{run.approach.join(", ")}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span>Created By:</span>
-                  <span>{run.createdBy}</span>
+                  <span className="text-right truncate">{run.createdBy}</span>
                 </div>
               </CardContent>
             </Card>
@@ -363,8 +364,8 @@ export default function RunDetailPage() {
         <TabsContent value="cashflows" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Cashflow Schedule</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-base">Cashflow Schedule</CardTitle>
+              <CardDescription className="text-sm">
                 Detailed cashflow breakdown for this valuation
               </CardDescription>
             </CardHeader>
@@ -372,11 +373,11 @@ export default function RunDetailPage() {
               <div className="space-y-2">
                 {run.results?.cashflows.map((cf, index) => (
                   <div key={index} className="flex justify-between items-center py-2 border-b">
-                    <div>
-                      <span className="font-medium">{cf.date}</span>
-                      <span className="text-sm text-gray-600 ml-2">({cf.type})</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-sm">{cf.date}</span>
+                      <span className="text-xs text-gray-600 ml-2">({cf.type})</span>
                     </div>
-                    <span className="font-mono">
+                    <span className="font-mono text-sm">
                       {cf.amount.toLocaleString()} {cf.currency}
                     </span>
                   </div>
@@ -389,18 +390,20 @@ export default function RunDetailPage() {
         <TabsContent value="sensitivities" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Risk Sensitivities</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-base">Risk Sensitivities</CardTitle>
+              <CardDescription className="text-sm">
                 Sensitivity analysis for this valuation
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {run.results?.pvBreakdown.sensitivities.map((sens, index) => (
-                <div key={index} className="flex justify-between items-center py-2 border-b">
-                  <span>{sens.shock}</span>
-                  <span className="font-mono">{sens.value.toLocaleString()} {run.currency}</span>
-                </div>
-              ))}
+              <div className="space-y-2">
+                {run.results?.pvBreakdown.sensitivities.map((sens, index) => (
+                  <div key={index} className="flex justify-between items-center py-2 border-b">
+                    <span className="text-sm">{sens.shock}</span>
+                    <span className="font-mono text-sm">{sens.value.toLocaleString()} {run.currency}</span>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -408,21 +411,21 @@ export default function RunDetailPage() {
         <TabsContent value="details" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Run Details</CardTitle>
+              <CardTitle className="text-base">Run Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-600">Run ID</label>
-                  <p className="font-mono">{run.id}</p>
+                  <p className="font-mono text-sm">{run.id}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Instrument Type</label>
-                  <p>{run.instrument.type}</p>
+                  <p className="text-sm">{run.instrument.type}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Currency</label>
-                  <p>{run.currency}</p>
+                  <p className="text-sm">{run.currency}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Status</label>

@@ -2,6 +2,112 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-specific optimizations */
+@layer utilities {
+  /* Touch-friendly button sizes */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Mobile-optimized text sizes */
+  .mobile-text-sm {
+    @apply text-sm sm:text-base;
+  }
+  
+  .mobile-text-lg {
+    @apply text-lg sm:text-xl;
+  }
+  
+  .mobile-text-xl {
+    @apply text-xl sm:text-2xl;
+  }
+  
+  /* Mobile spacing */
+  .mobile-p {
+    @apply p-4 sm:p-6;
+  }
+  
+  .mobile-px {
+    @apply px-4 sm:px-6;
+  }
+  
+  .mobile-py {
+    @apply py-4 sm:py-6;
+  }
+  
+  /* Mobile grid layouts */
+  .mobile-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  .mobile-grid-2 {
+    @apply grid grid-cols-1 sm:grid-cols-2;
+  }
+  
+  /* Mobile flex layouts */
+  .mobile-flex {
+    @apply flex flex-col sm:flex-row;
+  }
+  
+  .mobile-flex-center {
+    @apply flex flex-col sm:flex-row items-center;
+  }
+  
+  .mobile-flex-between {
+    @apply flex flex-col sm:flex-row items-start sm:items-center justify-between;
+  }
+  
+  /* Mobile visibility */
+  .mobile-only {
+    @apply block sm:hidden;
+  }
+  
+  .desktop-only {
+    @apply hidden sm:block;
+  }
+  
+  /* Mobile-optimized cards */
+  .mobile-card {
+    @apply bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300;
+  }
+  
+  /* Mobile-optimized buttons */
+  .mobile-button {
+    @apply w-full sm:w-auto touch-target;
+  }
+  
+  /* Mobile-optimized inputs */
+  .mobile-input {
+    @apply w-full text-base; /* Prevent zoom on iOS */
+  }
+  
+  /* Mobile-optimized tables */
+  .mobile-table {
+    @apply block sm:table;
+  }
+  
+  .mobile-table thead {
+    @apply hidden sm:table-header-group;
+  }
+  
+  .mobile-table tbody {
+    @apply block sm:table-row-group;
+  }
+  
+  .mobile-table tr {
+    @apply block sm:table-row border-b sm:border-b-0;
+  }
+  
+  .mobile-table td {
+    @apply block sm:table-cell text-right sm:text-left;
+  }
+  
+  .mobile-table td:before {
+    @apply content-[attr(data-label)] sm:content-none float-left sm:float-none font-medium sm:font-normal;
+  }
+}
+
 @layer base {
   :root {
     --background: 222.2 84% 4.9%;
