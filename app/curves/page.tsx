@@ -107,9 +107,9 @@ const mockCurves: CurveData[] = [
 ]
 
 export default function CurvesPage() {
-  const [selectedCurrency, setSelectedCurrency] = useState("")
-  const [selectedType, setSelectedType] = useState("")
-  const [selectedStatus, setSelectedStatus] = useState("")
+  const [selectedCurrency, setSelectedCurrency] = useState("all")
+  const [selectedType, setSelectedType] = useState("all")
+  const [selectedStatus, setSelectedStatus] = useState("all")
   const [asOfDate, setAsOfDate] = useState("2025-01-18")
   const [showChat, setShowChat] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
@@ -252,7 +252,7 @@ export default function CurvesPage() {
                     <SelectValue placeholder="All Currencies" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Currencies</SelectItem>
+                    <SelectItem value="all">All Currencies</SelectItem>
                     <SelectItem value="USD">USD</SelectItem>
                     <SelectItem value="EUR">EUR</SelectItem>
                     <SelectItem value="GBP">GBP</SelectItem>
@@ -271,7 +271,7 @@ export default function CurvesPage() {
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="OIS">OIS</SelectItem>
                     <SelectItem value="LIBOR">LIBOR</SelectItem>
                     <SelectItem value="SOFR">SOFR</SelectItem>
@@ -289,7 +289,7 @@ export default function CurvesPage() {
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Status</SelectItem>
+                    <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="stale">Stale</SelectItem>
                     <SelectItem value="error">Error</SelectItem>
