@@ -1,0 +1,297 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 142 76% 36%;
+    --radius: 0.5rem;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 142 76% 36%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-gray-900 text-gray-100;
+  }
+}
+
+@layer components {
+  /* Page Header Component */
+  .page-header {
+    @apply mb-8;
+  }
+  
+  .page-header h1 {
+    @apply text-3xl font-bold tracking-tight text-gray-100 mb-2;
+  }
+  
+  .page-header p {
+    @apply text-gray-400 text-sm;
+  }
+  
+  .page-header .breadcrumb {
+    @apply text-xs text-gray-500 mb-4;
+  }
+  
+  .page-header .breadcrumb a {
+    @apply text-gray-400 hover:text-gray-200 transition-colors;
+  }
+  
+  .page-header .breadcrumb span {
+    @apply mx-2;
+  }
+
+  /* Panel Component - Card variant with 16px radius */
+  .panel {
+    @apply bg-gray-800 border border-gray-700 rounded-2xl shadow-lg;
+  }
+  
+  .panel-header {
+    @apply px-6 py-4 border-b border-gray-700;
+  }
+  
+  .panel-content {
+    @apply px-6 py-6;
+  }
+  
+  .panel-footer {
+    @apply px-6 py-4 border-t border-gray-700;
+  }
+
+  /* Section Title */
+  .section-title {
+    @apply text-lg font-semibold text-gray-100 mb-4;
+  }
+  
+  .section-subtitle {
+    @apply text-sm text-gray-400 mb-6;
+  }
+
+  /* Content Grid */
+  .content-grid {
+    @apply grid gap-6 lg:grid-cols-12;
+  }
+  
+  .content-main {
+    @apply lg:col-span-8;
+  }
+  
+  .content-sidebar {
+    @apply lg:col-span-4;
+  }
+
+  /* HTML Fragment Container */
+  .html-fragment-container {
+    @apply panel;
+  }
+  
+  .html-fragment-container .html-fragment {
+    @apply max-w-none;
+  }
+  
+  .html-fragment-container .html-fragment h1,
+  .html-fragment-container .html-fragment h2,
+  .html-fragment-container .html-fragment h3,
+  .html-fragment-container .html-fragment h4,
+  .html-fragment-container .html-fragment h5,
+  .html-fragment-container .html-fragment h6 {
+    @apply text-gray-100;
+  }
+  
+  .html-fragment-container .html-fragment p {
+    @apply text-gray-300;
+  }
+  
+  .html-fragment-container .html-fragment a {
+    @apply text-brand-green hover:text-brand-green-light;
+  }
+  
+  .html-fragment-container .html-fragment code {
+    @apply bg-gray-700 text-gray-200 px-2 py-1 rounded;
+  }
+  
+  .html-fragment-container .html-fragment pre {
+    @apply bg-gray-800 border border-gray-700;
+  }
+  
+  .html-fragment-container .html-fragment blockquote {
+    @apply border-l-4 border-brand-green bg-gray-800;
+  }
+
+  /* Instructions Box */
+  .instructions-box {
+    @apply bg-gray-800/50 border border-dashed border-gray-600 rounded-lg p-4 mb-6;
+  }
+  
+  .instructions-box p {
+    @apply text-sm text-gray-400;
+  }
+  
+  .instructions-box code {
+    @apply bg-gray-700 text-gray-200 px-2 py-1 rounded text-xs;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* Status badge styles */
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-badge.dev {
+  @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300;
+}
+
+.status-badge.staging {
+  @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300;
+}
+
+.status-badge.prod {
+  @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;
+}
+
+/* Print Styles */
+@media print {
+  /* Hide navigation and UI elements */
+  nav[role="navigation"],
+  header[role="banner"],
+  footer[role="contentinfo"],
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Reset background and text colors for print */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Remove shadows and borders for cleaner print */
+  .panel,
+  .html-fragment-container,
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Ensure text is readable */
+  h1, h2, h3, h4, h5, h6 {
+    color: black !important;
+  }
+  
+  p, span, div {
+    color: black !important;
+  }
+  
+  /* Remove background colors from cards */
+  .bg-gray-800,
+  .bg-gray-900,
+  .bg-gray-700 {
+    background: white !important;
+  }
+  
+  /* Ensure tables are printable */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+  
+  th, td {
+    border: 1px solid #ccc !important;
+    padding: 8px !important;
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Print page breaks */
+  .page-break-before {
+    page-break-before: always;
+  }
+  
+  .page-break-after {
+    page-break-after: always;
+  }
+  
+  .page-break-inside-avoid {
+    page-break-inside: avoid;
+  }
+  
+  /* Ensure content fits on page */
+  .content-main {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Hide interactive elements */
+  button,
+  .interactive,
+  [data-copy],
+  [data-route],
+  [data-open] {
+    display: none !important;
+  }
+}

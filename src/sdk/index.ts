@@ -21,21 +21,46 @@ export interface IRSSpec {
 export interface CCSSpec {
   notional: number;
   ccy: string;
-  payFixed: boolean;
-  fixedRate?: number;
-  floatIndex: string;
-  effective: string;
-  maturity: string;
-  dcFixed: string;
-  dcFloat: string;
-  freqFixed: string;
-  freqFloat: string;
-  calendar: string;
-  bdc: string;
-  csa?: string;
   notionalCcy2: number;
   ccy2: string;
-  fxRate?: number;
+  indexCcy1: string;
+  indexCcy2: string;
+  effective: string;
+  maturity: string;
+  freqCcy1: string;
+  freqCcy2: string;
+  dcCcy1: string;
+  dcCcy2: string;
+  calendar: string;
+  bdc: string;
+  reportingCcy?: string;
+}
+
+export interface CSAConfig {
+  threshold: number;
+  minimum_transfer_amount: number;
+  rounding: number;
+  collateral_currency: string;
+  interest_rate: number;
+  posting_frequency: string;
+}
+
+export interface CreditCurveConfig {
+  name: string;
+  currency: string;
+  tenors: string[];
+  spreads: number[];
+  recovery_rate: number;
+}
+
+export interface XVAConfig {
+  compute_cva: boolean;
+  compute_dva: boolean;
+  compute_fva: boolean;
+  counterparty_credit_curve?: CreditCurveConfig;
+  own_credit_curve?: CreditCurveConfig;
+  funding_curve?: CreditCurveConfig;
+  csa_config?: CSAConfig;
 }
 
 export interface RunRequest {
@@ -43,6 +68,7 @@ export interface RunRequest {
   asOf: string;
   marketDataProfile: string;
   approach: string[];
+  xva_config?: XVAConfig;
 }
 
 export interface RunStatus {
@@ -52,6 +78,32 @@ export interface RunStatus {
   updated_at: string;
   request: RunRequest;
   error_message?: string;
+  ifrs13_assessment?: {
+    fair_value_level: string;
+    principal_market: string;
+    day1_pnl: number;
+    day1_pnl_within_tolerance: boolean;
+    ready_for_export: boolean;
+    needs_review: boolean;
+    review_reason?: string;
+    data_sources: Array<{
+      name: string;
+      observability: string;
+      level: string;
+      rationale?: string;
+    }>;
+    unobservable_inputs: string[];
+    reviewer_rationale?: string;
+  };
+}
+
+export interface XVABreakdown {
+  cva: number;
+  dva: number;
+  fva: number;
+  total_xva: number;
+  currency: string;
+  details: Record<string, any>;
 }
 
 export interface PVBreakdown {
@@ -62,4 +114,6 @@ export interface PVBreakdown {
   model_hash: string;
   calculated_at: string;
   metadata: Record<string, any>;
+  xva?: XVABreakdown;
 }
+
