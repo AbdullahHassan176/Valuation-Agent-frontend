@@ -149,7 +149,7 @@ export default function CurvesPage() {
   }
 
   // Handler functions
-  const handleBootstrapCurve = () => {
+  const handleBootstrapNewCurve = () => {
     setShowBootstrapModal(true)
   }
 
@@ -240,7 +240,7 @@ export default function CurvesPage() {
             
             <div className="flex space-x-2">
               <Button 
-                onClick={handleBootstrapCurve}
+                onClick={handleBootstrapNewCurve}
                 className="bg-green-500 hover:bg-green-600 text-black"
               >
                 <Plus className="w-4 h-4 mr-2" />
