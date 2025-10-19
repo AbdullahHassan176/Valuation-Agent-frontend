@@ -2,10 +2,10 @@
 const getApiBaseUrl = () => {
   if (typeof window === 'undefined') return '';
   
-  // Production - use separate Azure Static Web Apps backend
+  // Production - use Azure App Service backend
   if (window.location.hostname.includes('azurestaticapps.net')) {
-    // Replace with your actual backend Azure Static Web Apps URL
-    return 'https://wonderful-field-01919e603.2.azurestaticapps.net/api';
+    // Your Azure App Service backend URL
+    return 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
   }
   
   // Development - use local backend
