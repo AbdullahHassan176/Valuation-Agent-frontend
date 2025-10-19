@@ -1,0 +1,22 @@
+{
+  "folders": [
+    { "path": "frontend" },
+    { "path": "backend" },
+    { "path": "api" }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/.git": true,
+      "**/.DS_Store": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/.next": true,
+      "**/__pycache__": true
+    },
+    "terminal.integrated.cwd": "${workspaceFolder}",
+    "editor.formatOnSave": true,
+    "workbench.editor.closeOnFileDelete": true
+  }
+}
+

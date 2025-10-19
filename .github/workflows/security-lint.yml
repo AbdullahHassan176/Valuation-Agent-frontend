@@ -1,0 +1,298 @@
+name: Security Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly on Monday at 2 AM
+
+jobs:
+  security-lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install poetry
+        poetry install --with dev
+        
+    - name: Run security tests
+      run: |
+        cd backend
+        poetry run pytest tests/test_security.py -v
+        
+    - name: Run PII redaction tests
+      run: |
+        cd backend
+        poetry run python -c "
+        from app.core.security import redact_pii
+        import re
+        
+        # Test PII patterns
+        test_cases = [
+            ('Contact john.doe@company.com', '[REDACTED]'),
+            ('IBAN: GB29 NWBK 6016 1331 9268 19', '[REDACTED]'),
+            ('Phone: +1-555-123-4567', '[REDACTED]'),
+            ('SSN: 123-45-6789', '[REDACTED]'),
+        ]
+        
+        for input_text, expected_pattern in test_cases:
+            result = redact_pii(input_text)
+            assert '[REDACTED]' in result, f'PII not redacted in: {input_text}'
+            assert input_text.split('@')[0] not in result, f'Email not redacted: {input_text}'
+        
+        print('✅ PII redaction tests passed')
+        "
+        
+    - name: Test API key enforcement
+      run: |
+        cd backend
+        poetry run python -c "
+        import requests
+        import time
+        
+        # Start server in background
+        import subprocess
+        import os
+        import signal
+        
+        # Start the server
+        server_process = subprocess.Popen([
+            'poetry', 'run', 'uvicorn', 'app.main:app', 
+            '--host', '0.0.0.0', '--port', '8000'
+        ])
+        
+        try:
+            # Wait for server to start
+            time.sleep(5)
+            
+            # Test protected endpoint without API key
+            response = requests.post('http://localhost:8000/api/v1/ifrs/ask', 
+                                  json={'question': 'test'}, timeout=10)
+            assert response.status_code == 401, 'Protected endpoint should require API key'
+            
+            # Test with invalid API key
+            response = requests.post('http://localhost:8000/api/v1/ifrs/ask',
+                                  json={'question': 'test'},
+                                  headers={'X-API-Key': 'invalid-key'},
+                                  timeout=10)
+            assert response.status_code == 401, 'Invalid API key should be rejected'
+            
+            # Test health endpoint (should not require API key)
+            response = requests.get('http://localhost:8000/healthz', timeout=10)
+            assert response.status_code == 200, 'Health endpoint should be accessible'
+            
+            print('✅ API key enforcement tests passed')
+            
+        finally:
+            # Stop the server
+            server_process.terminate()
+            server_process.wait()
+        "
+        
+    - name: Test rate limiting
+      run: |
+        cd backend
+        poetry run python -c "
+        import requests
+        import time
+        
+        # Start server in background
+        import subprocess
+        
+        server_process = subprocess.Popen([
+            'poetry', 'run', 'uvicorn', 'app.main:app', 
+            '--host', '0.0.0.0', '--port', '8000'
+        ])
+        
+        try:
+            # Wait for server to start
+            time.sleep(5)
+            
+            # Make multiple requests to test rate limiting
+            responses = []
+            for i in range(105):  # Exceed rate limit
+                try:
+                    response = requests.post('http://localhost:8000/api/v1/ifrs/ask',
+                                           json={'question': f'test {i}'},
+                                           headers={'X-API-Key': 'test-key'},
+                                           timeout=2)
+                    responses.append(response.status_code)
+                except requests.exceptions.Timeout:
+                    responses.append(408)  # Timeout
+                    
+            # Check that some requests were rate limited
+            rate_limited = responses.count(429)
+            assert rate_limited > 0, f'Rate limiting not enforced. Got {rate_limited} rate limited responses'
+            
+            print(f'✅ Rate limiting tests passed ({rate_limited} requests rate limited)')
+            
+        finally:
+            # Stop the server
+            server_process.terminate()
+            server_process.wait()
+        "
+        
+    - name: Test request size limits
+      run: |
+        cd backend
+        poetry run python -c "
+        import requests
+        import time
+        
+        # Start server in background
+        import subprocess
+        
+        server_process = subprocess.Popen([
+            'poetry', 'run', 'uvicorn', 'app.main:app', 
+            '--host', '0.0.0.0', '--port', '8000'
+        ])
+        
+        try:
+            # Wait for server to start
+            time.sleep(5)
+            
+            # Test large request (over 10MB limit)
+            large_data = 'x' * (11 * 1024 * 1024)  # 11MB
+            
+            response = requests.post('http://localhost:8000/api/v1/docs/upload',
+                                   data={'file': large_data},
+                                   headers={'X-API-Key': 'test-key'},
+                                   timeout=10)
+            
+            assert response.status_code == 413, f'Large request should be rejected. Got {response.status_code}'
+            
+            print('✅ Request size limit tests passed')
+            
+        finally:
+            # Stop the server
+            server_process.terminate()
+            server_process.wait()
+        "
+        
+    - name: Test security headers
+      run: |
+        cd backend
+        poetry run python -c "
+        import requests
+        import time
+        
+        # Start server in background
+        import subprocess
+        
+        server_process = subprocess.Popen([
+            'poetry', 'run', 'uvicorn', 'app.main:app', 
+            '--host', '0.0.0.0', '--port', '8000'
+        ])
+        
+        try:
+            # Wait for server to start
+            time.sleep(5)
+            
+            # Test security headers
+            response = requests.get('http://localhost:8000/healthz', timeout=10)
+            
+            required_headers = [
+                'X-Content-Type-Options',
+                'X-Frame-Options',
+                'X-XSS-Protection',
+                'Strict-Transport-Security'
+            ]
+            
+            missing_headers = []
+            for header in required_headers:
+                if header not in response.headers:
+                    missing_headers.append(header)
+            
+            assert len(missing_headers) == 0, f'Missing security headers: {missing_headers}'
+            
+            print('✅ Security headers tests passed')
+            
+        finally:
+            # Stop the server
+            server_process.terminate()
+            server_process.wait()
+        "
+        
+    - name: Test input validation
+      run: |
+        cd backend
+        poetry run python -c "
+        import requests
+        import time
+        
+        # Start server in background
+        import subprocess
+        
+        server_process = subprocess.Popen([
+            'poetry', 'run', 'uvicorn', 'app.main:app', 
+            '--host', '0.0.0.0', '--port', '8000'
+        ])
+        
+        try:
+            # Wait for server to start
+            time.sleep(5)
+            
+            # Test malicious inputs
+            malicious_inputs = [
+                \"'; DROP TABLE users; --\",
+                \"1' OR '1'='1\",
+                \"<script>alert('xss')</script>\",
+                \"javascript:alert('xss')\"
+            ]
+            
+            for malicious_input in malicious_inputs:
+                response = requests.post('http://localhost:8000/api/v1/ifrs/ask',
+                                       json={'question': malicious_input},
+                                       headers={'X-API-Key': 'test-key'},
+                                       timeout=10)
+                
+                # Should not cause server errors (500)
+                assert response.status_code != 500, f'Malicious input caused server error: {malicious_input}'
+                
+                # Response should not contain unescaped script tags
+                if response.status_code == 200:
+                    response_text = str(response.json())
+                    assert '<script>' not in response_text, f'XSS not prevented: {malicious_input}'
+            
+            print('✅ Input validation tests passed')
+            
+        finally:
+            # Stop the server
+            server_process.terminate()
+            server_process.wait()
+        "
+        
+    - name: Security scan with bandit
+      run: |
+        cd backend
+        poetry run pip install bandit
+        poetry run bandit -r app/ -f json -o bandit-report.json || true
+        poetry run bandit -r app/ -ll
+        
+    - name: Dependency vulnerability scan
+      run: |
+        cd backend
+        poetry run pip install safety
+        poetry run safety check --json --output safety-report.json || true
+        poetry run safety check
+        
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          backend/bandit-report.json
+          backend/safety-report.json
