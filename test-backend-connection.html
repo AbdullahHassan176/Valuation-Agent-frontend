@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #333; border-radius: 5px; }
+        .success { background: #0d4f0d; border-color: #4caf50; }
+        .error { background: #4d0d0d; border-color: #f44336; }
+        .info { background: #0d2d4d; border-color: #2196f3; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #2a2a2a; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Backend Connection Test</h1>
+    <p>Testing connection to: <code>https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net</code></p>
+    
+    <div id="results"></div>
+    
+    <button onclick="testConnection()">🧪 Test Backend Connection</button>
+    <button onclick="testChatGPT()">🤖 Test ChatGPT Endpoint</button>
+    <button onclick="testAllEndpoints()">🔍 Test All Endpoints</button>
+    <button onclick="clearResults()">🗑️ Clear Results</button>
+
+    <script>
+        const BACKEND_URL = 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
+        
+        function addResult(title, content, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            results.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testConnection() {
+            addResult('🔍 Testing Basic Connection', 'Testing GET / endpoint...', 'info');
+            
+            try {
+                const response = await fetch(BACKEND_URL + '/');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Basic Connection Success', JSON.stringify(data, null, 2), 'success');
+                } else {
+                    addResult('❌ Basic Connection Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Connection Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testChatGPT() {
+            addResult('🤖 Testing ChatGPT Endpoint', 'Testing POST /poc/chat endpoint...', 'info');
+            
+            try {
+                const response = await fetch(BACKEND_URL + '/poc/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: 'Hello! This is a test message.' })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ ChatGPT Endpoint Success', JSON.stringify(data, null, 2), 'success');
+                } else {
+                    addResult('❌ ChatGPT Endpoint Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ ChatGPT Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAllEndpoints() {
+            const endpoints = [
+                { name: 'Health Check', url: '/healthz', method: 'GET' },
+                { name: 'API Info', url: '/', method: 'GET' },
+                { name: 'Valuation Runs', url: '/api/valuation/runs', method: 'GET' },
+                { name: 'Curves', url: '/api/valuation/curves', method: 'GET' },
+                { name: 'Chat (GET)', url: '/poc/chat', method: 'GET' }
+            ];
+            
+            addResult('🔍 Testing All Endpoints', 'Running comprehensive endpoint tests...', 'info');
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const options = {
+                        method: endpoint.method,
+                        headers: { 'Content-Type': 'application/json' }
+                    };
+                    
+                    if (endpoint.method === 'POST') {
+                        options.body = JSON.stringify({ message: 'Test message' });
+                    }
+                    
+                    const response = await fetch(BACKEND_URL + endpoint.url, options);
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        addResult(`✅ ${endpoint.name}`, JSON.stringify(data, null, 2), 'success');
+                    } else {
+                        addResult(`❌ ${endpoint.name}`, `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                    }
+                } catch (error) {
+                    addResult(`❌ ${endpoint.name}`, `Error: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        // Auto-run basic test on page load
+        window.onload = function() {
+            addResult('🚀 Page Loaded', 'Ready to test backend connection. Click the buttons above to run tests.', 'info');
+        };
+    </script>
+</body>
+</html>
