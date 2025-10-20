@@ -19,7 +19,10 @@ export const API_CONFIG = {
     IFRS_ASK: '/poc/ifrs-ask',
     PARSE_CONTRACT: '/poc/parse-contract',
     EXPLAIN_RUN: '/poc/explain-run',
-    HEALTH: '/healthz'
+    HEALTH: '/healthz',
+    VALUATION_RUNS: '/api/valuation/runs',
+    CURVES: '/api/valuation/curves',
+    TEST: '/api/test'
   }
 };
 

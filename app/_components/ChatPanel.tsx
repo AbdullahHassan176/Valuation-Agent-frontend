@@ -66,20 +66,53 @@ export function ChatPanel() {
     }
 
     setMessages(prev => [...prev, userMessage])
+    const currentInput = inputValue
     setInputValue('')
     setIsTyping(true)
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Import chat service dynamically to avoid SSR issues
+      const { chatService } = await import('@/lib/chat-service')
+      
+      // Get backend status first
+      const backendStatus = await chatService.getBackendStatus()
+      
+      let response = ''
+      if (backendStatus.healthy) {
+        // Backend is healthy, send real message
+        response = await chatService.sendMessage(currentInput)
+        
+        // Add context about available data
+        if (backendStatus.runs > 0 || backendStatus.curves > 0) {
+          response += `\n\n📊 **Backend Status:**\n- ${backendStatus.runs} valuation runs available\n- ${backendStatus.curves} curves available`
+          if (backendStatus.lastRun) {
+            response += `\n- Latest run: ${backendStatus.lastRun.valuation_type} (${backendStatus.lastRun.status})`
+          }
+        }
+      } else {
+        // Backend is not healthy, provide helpful message
+        response = "I'm having trouble connecting to the valuation backend. Please check if the backend is running and try again."
+      }
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: "I understand you're asking about: " + inputValue + ". Let me analyze the latest valuation data and provide you with a comprehensive explanation...",
+        content: response,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, assistantMessage])
+    } catch (error) {
+      console.error('Chat service error:', error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: "Sorry, I encountered an error while processing your request. Please try again.",
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
       setIsTyping(false)
-    }, 1500)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -89,11 +122,16 @@ export function ChatPanel() {
     }
   }
 
+  const handleQuickAction = async (action: string) => {
+    setInputValue(action)
+    await handleSendMessage()
+  }
+
   const quickActions = [
-    "Can you explain the latest IRS run results?",
-    "Generate a sensitivity analysis for +1bp",
-    "What's the IFRS-13 classification?",
-    "Export the current run data"
+    "Show me the latest valuation runs",
+    "What curves are available?",
+    "Check backend health status",
+    "Create a new IRS valuation run"
   ]
 
   if (!isOpen) return null
@@ -207,7 +245,7 @@ export function ChatPanel() {
                   variant="outline"
                   size="sm"
                   className="w-full text-left justify-start text-xs h-auto py-2 px-3"
-                  onClick={() => setInputValue(action)}
+                  onClick={() => handleQuickAction(action)}
                 >
                   {action}
                 </Button>
