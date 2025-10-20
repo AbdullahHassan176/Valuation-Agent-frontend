@@ -13,7 +13,7 @@ const getApiBaseUrl = () => {
   // Production - use Azure App Service backend
   if (window.location.hostname.includes('azurestaticapps.net')) {
     console.log('Using Azure backend for production');
-    return 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
+    return 'https://valuation-backend-api.azurewebsites.net';
   }
   
   // Development - use local backend
