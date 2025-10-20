@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Configuration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #333; border-radius: 5px; }
+        .success { background: #0d4f0d; border-color: #4caf50; }
+        .error { background: #4d0d0d; border-color: #f44336; }
+        .info { background: #0d2d4d; border-color: #2196f3; }
+        pre { background: #2a2a2a; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 API Configuration Test</h1>
+    <p>Testing frontend API configuration...</p>
+    
+    <div id="results"></div>
+    
+    <script>
+        function addResult(title, content, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            results.appendChild(div);
+        }
+        
+        // Test API configuration
+        function testApiConfig() {
+            addResult('🌐 Hostname Check', `Current hostname: ${window.location.hostname}`, 'info');
+            
+            // Simulate the API config logic
+            const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+            const backendUrl = isLocalhost
+                ? 'http://localhost:8000'
+                : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
+            
+            addResult('🔗 Backend URL', `Selected backend: ${backendUrl}`, 'info');
+            
+            // Test the backend connection
+            fetch(`${backendUrl}/poc/chat`)
+                .then(response => response.json())
+                .then(data => {
+                    addResult('✅ Backend Connection', JSON.stringify(data, null, 2), 'success');
+                })
+                .catch(error => {
+                    addResult('❌ Backend Connection Failed', `Error: ${error.message}`, 'error');
+                });
+        }
+        
+        // Run test on page load
+        window.onload = testApiConfig;
+    </script>
+</body>
+</html>
