@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .test { margin: 10px 0; padding: 15px; border-radius: 4px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        .status { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Valuation Platform API Connection Test</h1>
+        <p>This page tests the connection between the frontend and backend API services.</p>
+        
+        <div id="results"></div>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="testBackendHealth()">🏥 Test Backend Health</button>
+            <button onclick="testAPIRuns()">📋 Test API Runs</button>
+            <button onclick="testCreateRun()">➕ Test Create Run</button>
+            <button onclick="testAll()">🚀 Test All Connections</button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+        
+        <div class="info">
+            <strong>Current Environment:</strong> <span id="environment"></span><br>
+            <strong>API Base URL:</strong> <span id="apiUrl"></span>
+        </div>
+    </div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function getAPIBaseUrl() {
+            const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+            return isLocalhost 
+                ? 'http://localhost:9000'
+                : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
+        }
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<span class="status">${new Date().toLocaleTimeString()}</span>: ${message}`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testBackendHealth() {
+            log('🏥 Testing backend health endpoint...', 'info');
+            try {
+                const response = await fetch(`${getAPIBaseUrl()}/healthz`);
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Backend is healthy: ${JSON.stringify(data)}`, 'success');
+                    return true;
+                } else {
+                    log(`❌ Backend health check failed: ${response.status} ${response.statusText}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Backend connection failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testAPIRuns() {
+            log('📋 Testing API runs endpoint...', 'info');
+            try {
+                const response = await fetch(`${getAPIBaseUrl()}/api/valuation/runs`);
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ API runs endpoint working: Found ${data.length} runs`, 'success');
+                    if (data.length > 0) {
+                        log(`📊 Sample run: ${JSON.stringify(data[0], null, 2)}`, 'info');
+                    }
+                    return true;
+                } else {
+                    log(`❌ API runs endpoint failed: ${response.status} ${response.statusText}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ API runs connection failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testCreateRun() {
+            log('➕ Testing create run endpoint...', 'info');
+            try {
+                const testRun = {
+                    spec: {
+                        notional: 1000000,
+                        ccy: "USD",
+                        payFixed: true,
+                        fixedRate: 0.05,
+                        floatIndex: "SOFR",
+                        effective: new Date().toISOString().split('T')[0],
+                        maturity: new Date(Date.now() + 365 * 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        dcFixed: "ACT/360",
+                        dcFloat: "ACT/360",
+                        freqFixed: "Q",
+                        freqFloat: "Q",
+                        calendar: "USD",
+                        bdc: "MODIFIED_FOLLOWING"
+                    },
+                    asOf: new Date().toISOString().split('T')[0],
+                    marketDataProfile: "default",
+                    approach: ["OIS_discounting"]
+                };
+                
+                log(`📤 Sending test run: ${JSON.stringify(testRun, null, 2)}`, 'info');
+                
+                const response = await fetch(`${getAPIBaseUrl()}/api/valuation/runs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testRun)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Run created successfully: ID=${data.id}, Status=${data.status}`, 'success');
+                    return true;
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Create run failed: ${response.status} ${response.statusText} - ${errorText}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Create run connection failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testAll() {
+            log('🚀 Starting comprehensive API connection test...', 'info');
+            const results = {
+                health: await testBackendHealth(),
+                runs: await testAPIRuns(),
+                create: await testCreateRun()
+            };
+            
+            const passed = Object.values(results).filter(Boolean).length;
+            const total = Object.keys(results).length;
+            
+            if (passed === total) {
+                log(`🎉 All tests passed! (${passed}/${total})`, 'success');
+            } else {
+                log(`⚠️ Some tests failed: ${passed}/${total} passed`, 'error');
+            }
+            
+            return results;
+        }
+        
+        // Auto-run basic test on page load
+        window.onload = function() {
+            const apiUrl = getAPIBaseUrl();
+            const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+            
+            document.getElementById('environment').textContent = isLocalhost ? 'Development (localhost)' : 'Production (Azure)';
+            document.getElementById('apiUrl').textContent = apiUrl;
+            
+            log('🔗 API Connection Test Page Loaded', 'info');
+            log(`🌐 Testing against: ${apiUrl}`, 'info');
+        };
+    </script>
+</body>
+</html>
