@@ -41,7 +41,7 @@ export default function ChatPanel({ runId }: ChatPanelProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/chat/${runId}`, {
+      const response = await fetch(`http://localhost:9000/chat/${runId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

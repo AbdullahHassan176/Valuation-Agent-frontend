@@ -9,7 +9,7 @@ const getApiBaseUrl = () => {
   }
   
   // Development - use local backend
-  return 'http://localhost:8000';
+  return 'http://localhost:9000';
 };
 
 export const API_CONFIG = {

@@ -33,7 +33,7 @@ export default function ExplanationPanel({ runId }: ExplanationPanelProps) {
     setError(null);
     
     try {
-      const response = await fetch(`http://127.0.0.1:8000/explain/${runId}`);
+      const response = await fetch(`http://localhost:9000/explain/${runId}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch explanation: ${response.statusText}`);
       }
