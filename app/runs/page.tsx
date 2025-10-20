@@ -141,10 +141,10 @@ export default function RunsPage() {
   useEffect(() => {
     fetchRuns()
     
-    // Set up polling for run status updates
+    // Set up polling for run status updates (reduced frequency)
     const pollInterval = setInterval(() => {
       fetchRuns()
-    }, 5000) // Poll every 5 seconds
+    }, 30000) // Poll every 30 seconds instead of 5 seconds
     
     return () => clearInterval(pollInterval)
   }, [])
@@ -176,25 +176,44 @@ export default function RunsPage() {
       const data = await response.json()
       console.log("Fetched runs from API:", data)
       
-      // Transform API response to match frontend interface
-      const apiRuns: ValuationRun[] = data.map((run: any) => ({
-        id: run.id || run.run_id,
-        name: run.name || `${run.spec?.ccy || 'USD'} ${run.spec?.maturity || '5Y'} ${run.type || 'IRS'}`,
-        type: run.type || (run.spec?.ccy2 ? 'CCS' : 'IRS'),
-        status: run.status || 'pending',
-        notional: run.spec?.notional || 0,
-        currency: run.spec?.ccy || 'USD',
-        tenor: calculateTenorFromMaturity(run.spec?.effective, run.spec?.maturity),
-        fixedRate: run.spec?.fixedRate,
-        floatingIndex: run.spec?.floatIndex || 'SOFR',
-        pv: run.result?.pv_base_ccy || 0,
-        pv01: run.result?.sensitivities?.[0]?.value || 0,
-        created_at: run.created_at || new Date().toISOString(),
-        completed_at: run.completed_at,
-        error: run.error_message
-      }))
-      
-      setRuns(apiRuns)
+        // Transform API response to match frontend interface
+        const apiRuns: ValuationRun[] = data.map((run: any) => ({
+          id: run.id || run.run_id,
+          name: run.name || `${run.spec?.ccy || 'USD'} ${run.spec?.maturity || '5Y'} ${run.type || 'IRS'}`,
+          type: run.type || (run.spec?.ccy2 ? 'CCS' : 'IRS'),
+          status: run.status || 'pending',
+          notional: run.spec?.notional || 0,
+          currency: run.spec?.ccy || 'USD',
+          tenor: calculateTenorFromMaturity(run.spec?.effective, run.spec?.maturity),
+          fixedRate: run.spec?.fixedRate,
+          floatingIndex: run.spec?.floatIndex || 'SOFR',
+          pv: run.result?.pv_base_ccy || 0,
+          pv01: run.result?.sensitivities?.[0]?.value || 0,
+          created_at: run.created_at || new Date().toISOString(),
+          completed_at: run.completed_at,
+          error: run.error_message
+        }))
+        
+        // Add mock runs from localStorage
+        const mockRuns = JSON.parse(localStorage.getItem('mockRuns') || '[]')
+        const mockRunsFormatted: ValuationRun[] = mockRuns.map((run: any) => ({
+          id: run.id,
+          name: `${run.spec?.ccy || 'USD'} ${run.spec?.maturity || '5Y'} ${run.spec?.ccy2 ? 'CCS' : 'IRS'}`,
+          type: run.spec?.ccy2 ? 'CCS' : 'IRS',
+          status: run.status,
+          notional: run.spec?.notional || 0,
+          currency: run.spec?.ccy || 'USD',
+          tenor: calculateTenorFromMaturity(run.spec?.effective, run.spec?.maturity),
+          fixedRate: run.spec?.fixedRate,
+          floatingIndex: run.spec?.floatIndex || 'SOFR',
+          pv: run.result?.total_pv || 0,
+          pv01: run.result?.sensitivities?.[0]?.value || 0,
+          created_at: run.created_at,
+          completed_at: run.status === 'completed' ? run.created_at : undefined,
+          error: undefined
+        }))
+        
+        setRuns([...apiRuns, ...mockRunsFormatted])
     } catch (err) {
       console.error("Error fetching runs:", err)
       console.log("Falling back to mock data due to API error")
@@ -345,7 +364,10 @@ export default function RunsPage() {
           }
           
           console.log("Mock run created:", mockResult)
-          // Don't throw error, just use mock result
+          // Add mock run to local storage for persistence
+          const existingRuns = JSON.parse(localStorage.getItem('mockRuns') || '[]')
+          existingRuns.push(mockResult)
+          localStorage.setItem('mockRuns', JSON.stringify(existingRuns))
         } else {
           const result = await response.json()
           console.log("Run created successfully:", result)
