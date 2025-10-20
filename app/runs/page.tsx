@@ -128,6 +128,7 @@ export default function RunsPage() {
   const [runsPerPage] = useState(10)
   
   // New run form state
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const [newRun, setNewRun] = useState({
     name: "",
     type: "IRS" as "IRS" | "CCS",
@@ -141,13 +142,16 @@ export default function RunsPage() {
   useEffect(() => {
     fetchRuns()
     
-    // Set up polling for run status updates (reduced frequency)
+    // Only poll when there are running/pending runs, and not when forms are open
     const pollInterval = setInterval(() => {
-      fetchRuns()
-    }, 30000) // Poll every 30 seconds instead of 5 seconds
+      const hasRunningRuns = runs.some(run => run.status === 'running' || run.status === 'pending')
+      if (hasRunningRuns && !isFormOpen) {
+        fetchRuns()
+      }
+    }, 60000) // Poll every 60 seconds only if there are running runs and no forms open
     
     return () => clearInterval(pollInterval)
-  }, [])
+  }, [runs, isFormOpen]) // Add runs and isFormOpen dependencies
 
   const fetchRuns = async () => {
     setLoading(true)
@@ -368,6 +372,9 @@ export default function RunsPage() {
           const existingRuns = JSON.parse(localStorage.getItem('mockRuns') || '[]')
           existingRuns.push(mockResult)
           localStorage.setItem('mockRuns', JSON.stringify(existingRuns))
+          
+          // Show success message
+          alert("Run created successfully! (Using mock data due to backend API issue)")
         } else {
           const result = await response.json()
           console.log("Run created successfully:", result)
@@ -397,6 +404,7 @@ export default function RunsPage() {
       // Refresh the runs list
       await fetchRuns()
       
+      setIsFormOpen(false)
       setShowNewRunDialog(false)
       setNewRun({
         name: "",
@@ -531,7 +539,10 @@ export default function RunsPage() {
             <p className="text-gray-300 mt-2">Manage and monitor your financial instrument valuations</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0">
-            <Button onClick={() => setShowNewRunDialog(true)} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => {
+              setIsFormOpen(true)
+              setShowNewRunDialog(true)
+            }} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="h-4 w-4 mr-2" />
               New Run
             </Button>
@@ -1004,7 +1015,10 @@ export default function RunsPage() {
               <Button onClick={handleNewRun} className="flex-1">
                 Create Run
               </Button>
-              <Button variant="outline" onClick={() => setShowNewRunDialog(false)} className="flex-1">
+              <Button variant="outline" onClick={() => {
+                setIsFormOpen(false)
+                setShowNewRunDialog(false)
+              }} className="flex-1">
                 Cancel
               </Button>
             </div>
