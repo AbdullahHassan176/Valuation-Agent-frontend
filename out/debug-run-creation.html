@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Run Creation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .test { margin: 10px 0; padding: 15px; border-radius: 4px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        .status { font-weight: bold; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Debug Run Creation</h1>
+        <p>This tool helps diagnose why run creation is failing.</p>
+        
+        <div id="results"></div>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="testBackendConnection()">🔗 Test Backend Connection</button>
+            <button onclick="testCreateRun()">➕ Test Create Run</button>
+            <button onclick="testWithMinimalData()">🧪 Test Minimal Run</button>
+            <button onclick="testAll()">🚀 Run All Tests</button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+        
+        <div class="info">
+            <strong>Current Environment:</strong> <span id="environment"></span><br>
+            <strong>API Base URL:</strong> <span id="apiUrl"></span>
+        </div>
+    </div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function getAPIBaseUrl() {
+            const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+            return isLocalhost 
+                ? 'http://localhost:9000'
+                : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
+        }
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<span class="status">${new Date().toLocaleTimeString()}</span>: ${message}`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testBackendConnection() {
+            log('🔗 Testing backend connection...', 'info');
+            try {
+                const response = await fetch(`${getAPIBaseUrl()}/healthz`);
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Backend is reachable: ${JSON.stringify(data)}`, 'success');
+                    return true;
+                } else {
+                    log(`❌ Backend health check failed: ${response.status} ${response.statusText}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Backend connection failed: ${error.message}`, 'error');
+                log(`💡 Possible causes: Backend not running, wrong URL, CORS issue`, 'info');
+                return false;
+            }
+        }
+        
+        async function testCreateRun() {
+            log('➕ Testing create run with full data...', 'info');
+            try {
+                const testRun = {
+                    spec: {
+                        notional: 1000000,
+                        ccy: "USD",
+                        payFixed: true,
+                        fixedRate: 0.05,
+                        floatIndex: "SOFR",
+                        effective: new Date().toISOString().split('T')[0],
+                        maturity: new Date(Date.now() + 365 * 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        dcFixed: "ACT/360",
+                        dcFloat: "ACT/360",
+                        freqFixed: "Q",
+                        freqFloat: "Q",
+                        calendar: "USD",
+                        bdc: "MODIFIED_FOLLOWING"
+                    },
+                    asOf: new Date().toISOString().split('T')[0],
+                    marketDataProfile: "default",
+                    approach: ["OIS_discounting"]
+                };
+                
+                log(`📤 Sending request to: ${getAPIBaseUrl()}/api/valuation/runs`, 'info');
+                log(`📋 Request data: <pre>${JSON.stringify(testRun, null, 2)}</pre>`, 'info');
+                
+                const response = await fetch(`${getAPIBaseUrl()}/api/valuation/runs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testRun)
+                });
+                
+                log(`📊 Response status: ${response.status} ${response.statusText}`, 'info');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Run created successfully: ID=${data.id}, Status=${data.status}`, 'success');
+                    log(`📋 Response data: <pre>${JSON.stringify(data, null, 2)}</pre>`, 'info');
+                    return true;
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Create run failed: ${response.status} ${response.statusText}`, 'error');
+                    log(`📋 Error details: <pre>${errorText}</pre>`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Create run connection failed: ${error.message}`, 'error');
+                log(`💡 Possible causes: Network error, CORS issue, backend down`, 'info');
+                return false;
+            }
+        }
+        
+        async function testWithMinimalData() {
+            log('🧪 Testing with minimal data...', 'info');
+            try {
+                const minimalRun = {
+                    spec: {
+                        notional: 1000000,
+                        ccy: "USD",
+                        payFixed: true,
+                        fixedRate: 0.05,
+                        floatIndex: "SOFR",
+                        effective: "2024-01-15",
+                        maturity: "2029-01-15",
+                        dcFixed: "ACT/360",
+                        dcFloat: "ACT/360",
+                        freqFixed: "Q",
+                        freqFloat: "Q",
+                        calendar: "USD",
+                        bdc: "MODIFIED_FOLLOWING"
+                    },
+                    asOf: "2024-01-15",
+                    marketDataProfile: "default",
+                    approach: ["OIS_discounting"]
+                };
+                
+                log(`📤 Sending minimal request...`, 'info');
+                log(`📋 Minimal data: <pre>${JSON.stringify(minimalRun, null, 2)}</pre>`, 'info');
+                
+                const response = await fetch(`${getAPIBaseUrl()}/api/valuation/runs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(minimalRun)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Minimal run created: ID=${data.id}`, 'success');
+                    return true;
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Minimal run failed: ${response.status} - ${errorText}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Minimal run error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testAll() {
+            log('🚀 Starting comprehensive run creation test...', 'info');
+            const results = {
+                connection: await testBackendConnection(),
+                fullRun: await testCreateRun(),
+                minimalRun: await testWithMinimalData()
+            };
+            
+            const passed = Object.values(results).filter(Boolean).length;
+            const total = Object.keys(results).length;
+            
+            if (passed === total) {
+                log(`🎉 All tests passed! (${passed}/${total})`, 'success');
+                log(`💡 Your run creation should work now!`, 'success');
+            } else {
+                log(`⚠️ Some tests failed: ${passed}/${total} passed`, 'error');
+                log(`💡 Check the error messages above for specific issues`, 'info');
+            }
+            
+            return results;
+        }
+        
+        // Auto-run basic test on page load
+        window.onload = function() {
+            const apiUrl = getAPIBaseUrl();
+            const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+            
+            document.getElementById('environment').textContent = isLocalhost ? 'Development (localhost)' : 'Production (Azure)';
+            document.getElementById('apiUrl').textContent = apiUrl;
+            
+            log('🔧 Debug Run Creation Tool Loaded', 'info');
+            log(`🌐 Testing against: ${apiUrl}`, 'info');
+            log(`💡 Click "Run All Tests" to diagnose the issue`, 'info');
+        };
+    </script>
+</body>
+</html>

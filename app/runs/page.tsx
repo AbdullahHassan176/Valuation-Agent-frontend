@@ -296,7 +296,7 @@ export default function RunsPage() {
       let spec
       if (runData.type === "IRS") {
         spec = {
-          notional: runData.notional,
+        notional: runData.notional,
           ccy: runData.currency,
           payFixed: true, // Default to paying fixed
           fixedRate: runData.fixedRate || 0.05,
@@ -363,10 +363,10 @@ export default function RunsPage() {
           console.log("POST endpoint not working, creating mock run...")
           
           // Calculate realistic PV based on instrument parameters
-          const notional = spec.notional || 1000000
-          const fixedRate = spec.fixedRate || 0.05
-          const maturity = new Date(spec.maturity)
-          const effective = new Date(spec.effective)
+          const notional = spec?.notional || 1000000
+          const fixedRate = spec?.fixedRate || 0.05
+          const maturity = new Date(spec?.maturity || new Date())
+          const effective = new Date(spec?.effective || new Date())
           const yearsToMaturity = (maturity.getTime() - effective.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
           
           // Simple PV calculation: PV = Notional * (Market Rate - Fixed Rate) * Years * Discount Factor
@@ -407,10 +407,10 @@ export default function RunsPage() {
       } catch (error) {
         console.error("API call failed, creating mock run:", error)
         // Create mock run on any error with realistic calculations
-        const notional = spec.notional || 1000000
-        const fixedRate = spec.fixedRate || 0.05
-        const maturity = new Date(spec.maturity)
-        const effective = new Date(spec.effective)
+        const notional = spec?.notional || 1000000
+        const fixedRate = spec?.fixedRate || 0.05
+        const maturity = new Date(spec?.maturity || new Date())
+        const effective = new Date(spec?.effective || new Date())
         const yearsToMaturity = (maturity.getTime() - effective.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
         
         // Simple PV calculation: PV = Notional * (Market Rate - Fixed Rate) * Years * Discount Factor
