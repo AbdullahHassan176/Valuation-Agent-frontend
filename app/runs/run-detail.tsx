@@ -115,51 +115,77 @@ export default function RunDetailPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Get run ID from URL parameters
-    const urlParams = new URLSearchParams(window.location.search)
-    const runId = urlParams.get('id') || 'run-001'
-    
-    // Mock data - replace with actual API call
-    const mockRun: ValuationRun = {
-      id: runId,
-      instrument: {
-        name: "USD 5Y IRS",
-        type: "IRS",
-        description: "5-year USD Interest Rate Swap",
-        icon: "📈"
-      },
-      asOfDate: "2024-01-15",
-      status: "completed",
-      pv: 125000.50,
-      currency: "USD",
-      createdBy: "john.doe@company.com",
-      createdAt: "2024-01-15T09:30:00Z",
-      completedAt: "2024-01-15T09:32:15Z",
-      approach: ["OIS_discounting"],
-      marketDataProfile: "synthetic",
-      results: {
-        pvBreakdown: {
-          pvBaseCcy: 125000.50,
-          legs: [
-            { name: "Fixed Leg", pv: -125000.50 },
-            { name: "Float Leg", pv: 250000.00 }
-          ],
-          sensitivities: [
-            { shock: "PV01", value: 5000.00 }
-          ]
-        },
-        cashflows: [
-          { date: "2024-04-15", type: "Fixed", amount: -25000, currency: "USD" },
-          { date: "2024-07-15", type: "Fixed", amount: -25000, currency: "USD" },
-          { date: "2024-10-15", type: "Fixed", amount: -25000, currency: "USD" },
-          { date: "2025-01-15", type: "Fixed", amount: -25000, currency: "USD" },
-          { date: "2025-04-15", type: "Fixed", amount: -25000, currency: "USD" }
-        ]
+    const fetchRunDetails = async () => {
+      try {
+        // Get run ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search)
+        const runId = urlParams.get('id')
+        
+        if (!runId) {
+          setError("No run ID provided")
+          setLoading(false)
+          return
+        }
+        
+        console.log("Fetching run details for ID:", runId)
+        
+        // Try to fetch from API
+        const apiUrl = window.location.hostname === 'localhost' 
+          ? `http://localhost:9000/api/valuation/runs/${runId}`
+          : `https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net/api/valuation/runs/${runId}`
+        
+        console.log("Fetching run from API URL:", apiUrl)
+        const response = await fetch(apiUrl)
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
+        const apiRun = await response.json()
+        console.log("Fetched run from API:", apiRun)
+        
+        // Transform API response to frontend format
+        const transformedRun: ValuationRun = {
+          id: apiRun.id,
+          instrument: {
+            name: `${apiRun.spec?.ccy || 'USD'} ${apiRun.spec?.maturity || '5Y'} ${apiRun.spec?.ccy2 ? 'CCS' : 'IRS'}`,
+            type: apiRun.spec?.ccy2 ? "CCS" : "IRS",
+            description: `${apiRun.spec?.ccy2 ? 'Cross Currency' : 'Interest Rate'} Swap`,
+            icon: "📈"
+          },
+          asOfDate: apiRun.request?.asOf || new Date().toISOString().split('T')[0],
+          status: apiRun.status || "pending",
+          pv: apiRun.result?.total_pv || 0,
+          currency: apiRun.spec?.ccy || "USD",
+          createdBy: "system",
+          createdAt: apiRun.created_at || new Date().toISOString(),
+          completedAt: apiRun.completed_at,
+          approach: apiRun.request?.approach || ["OIS_discounting"],
+          marketDataProfile: apiRun.request?.marketDataProfile || "default",
+          results: apiRun.result ? {
+            pvBreakdown: {
+              pvBaseCcy: apiRun.result.total_pv,
+              legs: apiRun.result.components ? Object.entries(apiRun.result.components).map(([name, value]) => ({
+                name,
+                pv: value as number
+              })) : [],
+              sensitivities: apiRun.result.sensitivities || []
+            },
+            cashflows: [] // TODO: Add cashflow data from API
+          } : undefined
+        }
+        
+        setRun(transformedRun)
+        setLoading(false)
+        
+      } catch (err) {
+        console.error("Error fetching run details:", err)
+        setError("Failed to fetch run details. The run may not exist or the backend is unavailable.")
+        setLoading(false)
       }
     }
-
-    setRun(mockRun)
-    setLoading(false)
+    
+    fetchRunDetails()
   }, [])
 
   const handleBack = () => {

@@ -165,7 +165,12 @@ export default function DashboardPage() {
       }
       
       // Call the API to create the run
-      const response = await fetch('/api/valuation/runs', {
+      const apiUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:9000/api/valuation/runs'
+        : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net/api/valuation/runs'
+      
+      console.log("Creating run via API URL:", apiUrl)
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -632,5 +637,6 @@ export default function DashboardPage() {
     </Dialog>
   </div>
   )
+}
 }
 }

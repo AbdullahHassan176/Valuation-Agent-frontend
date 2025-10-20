@@ -140,6 +140,13 @@ export default function RunsPage() {
 
   useEffect(() => {
     fetchRuns()
+    
+    // Set up polling for run status updates
+    const pollInterval = setInterval(() => {
+      fetchRuns()
+    }, 5000) // Poll every 5 seconds
+    
+    return () => clearInterval(pollInterval)
   }, [])
 
   const fetchRuns = async () => {
@@ -148,7 +155,12 @@ export default function RunsPage() {
     try {
       // Try to call the actual API
       console.log("Attempting to fetch runs from API...")
-      const response = await fetch('/api/valuation/runs', {
+      const apiUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:9000/api/valuation/runs'
+        : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net/api/valuation/runs'
+      
+      console.log("Fetching runs from API URL:", apiUrl)
+      const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -287,7 +299,12 @@ export default function RunsPage() {
       
       // Call the actual API
       console.log("Creating run with spec:", spec)
-      const response = await fetch('/api/valuation/runs', {
+      const apiUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:9000/api/valuation/runs'
+        : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net/api/valuation/runs'
+      
+      console.log("Calling API URL:", apiUrl)
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
