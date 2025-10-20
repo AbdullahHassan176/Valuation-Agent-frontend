@@ -2,14 +2,13 @@
 const getApiBaseUrl = () => {
   if (typeof window === 'undefined') return '';
   
-  // Production - use Azure App Service backend
-  if (window.location.hostname.includes('azurestaticapps.net')) {
-    // Your Azure App Service backend URL
-    return 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
-  }
+  // Check if running on localhost
+  const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
   
-  // Development - use local backend
-  return 'http://localhost:8000';
+  // Use local backend for development, Azure backend for production
+  return isLocalhost
+    ? 'http://localhost:8000'
+    : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
 };
 
 export const API_CONFIG = {
