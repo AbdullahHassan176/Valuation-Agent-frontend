@@ -146,10 +146,48 @@ export default function RunsPage() {
     setLoading(true)
     setError(null)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Try to call the actual API
+      console.log("Attempting to fetch runs from API...")
+      const response = await fetch('/api/valuation/runs', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
       
-      // Mock data
+      console.log("API Response status:", response.status)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      console.log("Fetched runs from API:", data)
+      
+      // Transform API response to match frontend interface
+      const apiRuns: ValuationRun[] = data.map((run: any) => ({
+        id: run.id || run.run_id,
+        name: run.name || `${run.spec?.ccy || 'USD'} ${run.spec?.maturity || '5Y'} ${run.type || 'IRS'}`,
+        type: run.type || (run.spec?.ccy2 ? 'CCS' : 'IRS'),
+        status: run.status || 'pending',
+        notional: run.spec?.notional || 0,
+        currency: run.spec?.ccy || 'USD',
+        tenor: calculateTenorFromMaturity(run.spec?.effective, run.spec?.maturity),
+        fixedRate: run.spec?.fixedRate,
+        floatingIndex: run.spec?.floatIndex || 'SOFR',
+        pv: run.result?.pv_base_ccy || 0,
+        pv01: run.result?.sensitivities?.[0]?.value || 0,
+        created_at: run.created_at || new Date().toISOString(),
+        completed_at: run.completed_at,
+        error: run.error_message
+      }))
+      
+      setRuns(apiRuns)
+    } catch (err) {
+      console.error("Error fetching runs:", err)
+      console.log("Falling back to mock data due to API error")
+      
+      // Fallback to mock data if API fails
       const mockRuns: ValuationRun[] = [
         {
           id: "run-001",
@@ -177,55 +215,22 @@ export default function RunsPage() {
           floatingIndex: "EURIBOR-3M",
           progress: 65,
           created_at: "2024-01-15T11:15:00Z"
-        },
-        {
-          id: "run-003",
-          name: "GBP 10Y IRS - Long Term",
-          type: "IRS",
-          status: "failed",
-          notional: 25000000,
-          currency: "GBP",
-          tenor: "10Y",
-          fixedRate: 3.85,
-          floatingIndex: "SONIA-6M",
-          error: "Market data unavailable for GBP curves",
-          created_at: "2024-01-15T09:45:00Z"
-        },
-        {
-          id: "run-004",
-          name: "USD 2Y IRS - Short Term",
-          type: "IRS",
-          status: "completed",
-          notional: 15000000,
-          currency: "USD",
-          tenor: "2Y",
-          fixedRate: 4.15,
-          floatingIndex: "SOFR-1M",
-          pv: -85000,
-          pv01: 2800,
-          created_at: "2024-01-15T08:20:00Z",
-          completed_at: "2024-01-15T08:22:30Z"
-        },
-        {
-          id: "run-005",
-          name: "JPY/USD CCS - Asian Markets",
-          type: "CCS",
-          status: "pending",
-          notional: 1000000000,
-          currency: "JPY",
-          tenor: "5Y",
-          floatingIndex: "TONA-3M",
-          created_at: "2024-01-15T12:00:00Z"
         }
       ]
-      
       setRuns(mockRuns)
-    } catch (err) {
-      setError("Failed to fetch runs")
-      console.error("Error fetching runs:", err)
+      setError("Backend API not available - using mock data. Check if backend is running on port 9000.")
     } finally {
       setLoading(false)
     }
+  }
+  
+  // Helper function to calculate tenor from dates
+  const calculateTenorFromMaturity = (effective: string, maturity: string): string => {
+    if (!effective || !maturity) return "5Y"
+    const start = new Date(effective)
+    const end = new Date(maturity)
+    const years = (end.getFullYear() - start.getFullYear())
+    return `${years}Y`
   }
 
   const handleNewRun = async () => {
@@ -238,23 +243,77 @@ export default function RunsPage() {
       
       console.log("Creating new run:", runData)
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Create proper API request payload
+      const today = new Date().toISOString().split('T')[0]
       
-      const newRunData: ValuationRun = {
-        id: `run-${Date.now()}`,
-        name: runData.name || `${runData.currency} ${runData.tenor} ${runData.type}`,
-        type: runData.type,
-        status: "pending",
-        notional: runData.notional,
-        currency: runData.currency,
-        tenor: runData.tenor,
-        fixedRate: runData.fixedRate,
-        floatingIndex: runData.floatingIndex,
-        created_at: new Date().toISOString()
+      // Build instrument specification based on type
+      let spec
+      if (runData.type === "IRS") {
+        spec = {
+          notional: runData.notional,
+          ccy: runData.currency,
+          payFixed: true, // Default to paying fixed
+          fixedRate: runData.fixedRate || 0.05,
+          floatIndex: runData.floatingIndex,
+          effective: today,
+          maturity: calculateMaturityDate(today, runData.tenor),
+          dcFixed: "ACT/360",
+          dcFloat: "ACT/360", 
+          freqFixed: "Q",
+          freqFloat: "Q",
+          calendar: runData.currency,
+          bdc: "MODIFIED_FOLLOWING"
+        }
+      } else if (runData.type === "CCS") {
+        spec = {
+          notional: runData.notional,
+          ccy: runData.currency,
+          payFixed: true,
+          fixedRate: runData.fixedRate || 0.05,
+          floatIndex: runData.floatingIndex,
+          effective: today,
+          maturity: calculateMaturityDate(today, runData.tenor),
+          dcFixed: "ACT/360",
+          dcFloat: "ACT/360",
+          freqFixed: "Q", 
+          freqFloat: "Q",
+          calendar: runData.currency,
+          bdc: "MODIFIED_FOLLOWING",
+          notionalCcy2: runData.notional * 0.85, // Approximate EUR notional
+          ccy2: runData.currency === "USD" ? "EUR" : "USD",
+          fxRate: 1.08
+        }
       }
       
-      setRuns(prev => [newRunData, ...prev])
+      // Call the actual API
+      console.log("Creating run with spec:", spec)
+      const response = await fetch('/api/valuation/runs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          spec: spec,
+          asOf: today,
+          marketDataProfile: "default",
+          approach: ["OIS_discounting"]
+        })
+      })
+      
+      console.log("API Response status:", response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("API Error response:", errorText)
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+      }
+      
+      const result = await response.json()
+      console.log("Run created successfully:", result)
+      
+      // Refresh the runs list
+      await fetchRuns()
+      
       setShowNewRunDialog(false)
       setNewRun({
         name: "",
@@ -269,6 +328,15 @@ export default function RunsPage() {
       setError("Failed to create run")
       console.error("Error creating run:", err)
     }
+  }
+  
+  // Helper function to calculate maturity date
+  const calculateMaturityDate = (startDate: string, tenor: string): string => {
+    const start = new Date(startDate)
+    const years = parseInt(tenor.replace('Y', ''))
+    const maturity = new Date(start)
+    maturity.setFullYear(maturity.getFullYear() + years)
+    return maturity.toISOString().split('T')[0]
   }
 
   const handleViewRun = (runId: string) => {

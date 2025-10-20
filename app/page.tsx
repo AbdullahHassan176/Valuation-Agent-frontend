@@ -118,18 +118,96 @@ export default function DashboardPage() {
     setShowUploadDialog(true)
   }
 
-  const handleNewRun = () => {
-    console.log('Starting new run:', { type: selectedRunType, config: runConfig })
-    setShowNewRunDialog(false)
-    setRunConfig({ notional: '', currency: 'USD', tenor: '5Y', fixedRate: '', floatingIndex: 'SOFR' })
-    router.push('/runs')
+  const handleNewRun = async () => {
+    try {
+      console.log('Starting new run:', { type: selectedRunType, config: runConfig })
+      
+      // Create actual run via API
+      const today = new Date().toISOString().split('T')[0]
+      
+      // Build instrument specification
+      let spec
+      if (selectedRunType === "IRS") {
+        spec = {
+          notional: parseFloat(runConfig.notional) || 1000000,
+          ccy: runConfig.currency,
+          payFixed: true,
+          fixedRate: parseFloat(runConfig.fixedRate) || 0.05,
+          floatIndex: runConfig.floatingIndex,
+          effective: today,
+          maturity: calculateMaturityDate(today, runConfig.tenor),
+          dcFixed: "ACT/360",
+          dcFloat: "ACT/360",
+          freqFixed: "Q",
+          freqFloat: "Q", 
+          calendar: runConfig.currency,
+          bdc: "MODIFIED_FOLLOWING"
+        }
+      } else if (selectedRunType === "CCS") {
+        spec = {
+          notional: parseFloat(runConfig.notional) || 1000000,
+          ccy: runConfig.currency,
+          payFixed: true,
+          fixedRate: parseFloat(runConfig.fixedRate) || 0.05,
+          floatIndex: runConfig.floatingIndex,
+          effective: today,
+          maturity: calculateMaturityDate(today, runConfig.tenor),
+          dcFixed: "ACT/360",
+          dcFloat: "ACT/360",
+          freqFixed: "Q",
+          freqFloat: "Q",
+          calendar: runConfig.currency,
+          bdc: "MODIFIED_FOLLOWING",
+          notionalCcy2: (parseFloat(runConfig.notional) || 1000000) * 0.85,
+          ccy2: runConfig.currency === "USD" ? "EUR" : "USD",
+          fxRate: 1.08
+        }
+      }
+      
+      // Call the API to create the run
+      const response = await fetch('/api/valuation/runs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          spec: spec,
+          asOf: today,
+          marketDataProfile: "default",
+          approach: ["OIS_discounting"]
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const result = await response.json()
+      console.log('Run created successfully:', result)
+      
+      setShowNewRunDialog(false)
+      setRunConfig({ notional: '', currency: 'USD', tenor: '5Y', fixedRate: '', floatingIndex: 'SOFR' })
+      router.push('/runs')
+    } catch (error) {
+      console.error('Failed to create run:', error)
+      // Still navigate to runs page even if creation fails
+      setShowNewRunDialog(false)
+      setRunConfig({ notional: '', currency: 'USD', tenor: '5Y', fixedRate: '', floatingIndex: 'SOFR' })
+      router.push('/runs')
+    }
   }
 
-  const handleStartRun = () => {
-    console.log('Starting new run:', { type: selectedRunType, config: runConfig })
-    setShowNewRunDialog(false)
-    setRunConfig({ notional: '', currency: 'USD', tenor: '5Y', fixedRate: '', floatingIndex: 'SOFR' })
-    router.push('/runs')
+  const handleStartRun = async () => {
+    await handleNewRun() // Use the same logic
+  }
+  
+  // Helper function to calculate maturity date
+  const calculateMaturityDate = (startDate: string, tenor: string): string => {
+    const start = new Date(startDate)
+    const years = parseInt(tenor.replace('Y', ''))
+    const maturity = new Date(start)
+    maturity.setFullYear(maturity.getFullYear() + years)
+    return maturity.toISOString().split('T')[0]
   }
 
   const handleUpload = () => {
@@ -554,4 +632,5 @@ export default function DashboardPage() {
     </Dialog>
   </div>
   )
+}
 }
