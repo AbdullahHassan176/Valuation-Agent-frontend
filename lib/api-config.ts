@@ -10,15 +10,17 @@ const getApiBaseUrl = () => {
     isLocalhost: ['localhost', '127.0.0.1'].includes(window.location.hostname)
   });
   
-  // Production - use Azure App Service backend
-  if (window.location.hostname.includes('azurestaticapps.net')) {
-    console.log('Using Azure backend for production');
-    return 'https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net';
-  }
+  // Check if running on localhost
+  const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
   
-  // Development - use local backend
-  console.log('Using localhost backend for development');
-  return 'http://localhost:9000';
+  // Use local backend for development, Azure backend for production
+  const backendUrl = isLocalhost
+    ? 'http://localhost:9000'
+    : 'https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net';
+  
+  console.log('Selected backend URL:', backendUrl);
+  console.log('Config file: lib/api-config.ts');
+  return backendUrl;
 };
 
 export const API_CONFIG = {
