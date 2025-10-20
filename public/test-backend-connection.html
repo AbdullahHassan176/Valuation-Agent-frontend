@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Backend Connection Test</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
         .test { margin: 10px 0; padding: 10px; border: 1px solid #333; border-radius: 5px; }
@@ -26,6 +29,7 @@
 <body>
     <h1>🔧 Backend Connection Test</h1>
     <p>Testing connection to: <code>https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net</code></p>
+    <p><small>Page loaded at: <span id="timestamp"></span></small></p>
     
     <div id="results"></div>
     
@@ -377,6 +381,9 @@
         
         // Auto-run basic tests on page load
         window.onload = function() {
+            // Set timestamp
+            document.getElementById('timestamp').textContent = new Date().toLocaleString();
+            
             addResult('🚀 Page Loaded', 'Running automatic tests...', 'info');
             
             // Auto-run environment detection and health check
