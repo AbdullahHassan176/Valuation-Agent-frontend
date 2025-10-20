@@ -43,6 +43,7 @@
         <button onclick="testAllEndpoints()">🔍 Test All Endpoints</button>
         <button onclick="testBothServices()">🔄 Test Both Services</button>
         <button onclick="testNewEndpoints()">🧪 Test New Endpoints</button>
+        <button onclick="testDatabaseStatus()">🗄️ Test Database Status</button>
         <button onclick="testEnvironmentDetection()">🌍 Test Environment Detection</button>
         <button onclick="clearResults()">🗑️ Clear Results</button>
     </div>
@@ -326,6 +327,32 @@
                 }
             } catch (error) {
                 addResult('❌ Curves', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDatabaseStatus() {
+            addResult('🗄️ Testing Database Status', 'Checking database persistence and data...', 'info');
+            
+            try {
+                const response = await fetch(BACKEND_URL + '/api/database/status');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Database Status', 
+                        `Database Type: ${data.database_type}\n` +
+                        `Database Path: ${data.database_path}\n` +
+                        `Total Runs: ${data.total_runs}\n` +
+                        `Total Curves: ${data.total_curves}\n` +
+                        `Recent Runs: ${JSON.stringify(data.recent_runs, null, 2)}\n` +
+                        `Message: ${data.message}`, 
+                        'success');
+                } else {
+                    addResult('❌ Database Status', 
+                        `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                addResult('❌ Database Status', `Error: ${error.message}`, 'error');
             }
         }
         
