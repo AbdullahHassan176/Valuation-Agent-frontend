@@ -129,7 +129,7 @@ export default function RunsPage() {
   
   // New run form state
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const [autoRefresh, setAutoRefresh] = useState(true) // User can disable auto-refresh
+  const [autoRefresh, setAutoRefresh] = useState(false) // DISABLED by default to prevent infinite loops
   const [newRun, setNewRun] = useState({
     name: "",
     type: "IRS" as "IRS" | "CCS",
@@ -143,26 +143,30 @@ export default function RunsPage() {
   useEffect(() => {
     fetchRuns()
     
-    // Much smarter polling strategy
-    const pollInterval = setInterval(() => {
-      const hasRunningRuns = runs.some(run => run.status === 'running' || run.status === 'pending')
-      const hasCompletedRuns = runs.some(run => run.status === 'completed')
-      
-      // Only poll if:
-      // 1. Auto-refresh is enabled
-      // 2. There are actually running runs
-      // 3. No forms are open
-      if (autoRefresh && hasRunningRuns && !isFormOpen) {
-        console.log("Polling for running runs...")
-        fetchRuns()
-      } else if (!hasRunningRuns && hasCompletedRuns) {
-        // If all runs are completed, poll much less frequently
-        console.log("All runs completed, reducing polling frequency")
-      }
-    }, 120000) // Poll every 2 minutes instead of 1 minute
+    // DISABLED: Auto-refresh to prevent infinite loops
+    // Users can manually refresh using the Refresh button
+    console.log("Auto-refresh disabled to prevent infinite loops")
     
-    return () => clearInterval(pollInterval)
-  }, [runs, isFormOpen]) // Add runs and isFormOpen dependencies
+    // Only set up polling if explicitly enabled and there are running runs
+    let pollInterval: NodeJS.Timeout | null = null
+    
+    if (autoRefresh) {
+      pollInterval = setInterval(() => {
+        // Only poll if there are actually running runs and no forms are open
+        const hasRunningRuns = runs.some(run => run.status === 'running' || run.status === 'pending')
+        if (hasRunningRuns && !isFormOpen) {
+          console.log("Polling for running runs...")
+          fetchRuns()
+        }
+      }, 300000) // Poll every 5 minutes only if needed
+    }
+    
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval)
+      }
+    }
+  }, []) // REMOVED runs dependency to prevent infinite loop
 
   const fetchRuns = async () => {
     setLoading(true)
