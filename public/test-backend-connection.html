@@ -37,12 +37,14 @@
         <br>
         <button onclick="testChatGPT()">🤖 Test ChatGPT Endpoint</button>
         <button onclick="testAllEndpoints()">🔍 Test All Endpoints</button>
+        <button onclick="testBothServices()">🔄 Test Both Services</button>
         <button onclick="testEnvironmentDetection()">🌍 Test Environment Detection</button>
         <button onclick="clearResults()">🗑️ Clear Results</button>
     </div>
 
     <script>
-        const BACKEND_URL = 'https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net';
+        const BACKEND_URL = 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
+        const API_URL = 'https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net';
         
         function addResult(title, content, type = 'info') {
             const results = document.getElementById('results');
@@ -190,6 +192,46 @@
             addResult('✅ Environment Detection', 
                 `Environment Info:\n${JSON.stringify(envInfo, null, 2)}\n\nExpected Backend: ${expectedBackend}`, 
                 'success');
+        }
+        
+        async function testBothServices() {
+            addResult('🔄 Testing Both Services', 'Testing Backend and API services...', 'info');
+            
+            // Test Backend Service (LangGraph Orchestrator)
+            try {
+                const backendResponse = await fetch(BACKEND_URL + '/healthz');
+                const backendData = await backendResponse.json();
+                
+                if (backendResponse.ok) {
+                    addResult('✅ Backend Service (LangGraph)', 
+                        `Status: ${backendResponse.status}\nResponse: ${JSON.stringify(backendData, null, 2)}`, 
+                        'success');
+                } else {
+                    addResult('❌ Backend Service (LangGraph)', 
+                        `Status: ${backendResponse.status}\nResponse: ${JSON.stringify(backendData, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                addResult('❌ Backend Service (LangGraph)', `Error: ${error.message}`, 'error');
+            }
+            
+            // Test API Service (Valuation Engine)
+            try {
+                const apiResponse = await fetch(API_URL + '/healthz');
+                const apiData = await apiResponse.json();
+                
+                if (apiResponse.ok) {
+                    addResult('✅ API Service (Valuation)', 
+                        `Status: ${apiResponse.status}\nResponse: ${JSON.stringify(apiData, null, 2)}`, 
+                        'success');
+                } else {
+                    addResult('❌ API Service (Valuation)', 
+                        `Status: ${apiResponse.status}\nResponse: ${JSON.stringify(apiData, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                addResult('❌ API Service (Valuation)', `Error: ${error.message}`, 'error');
+            }
         }
         
         async function testAllEndpoints() {
