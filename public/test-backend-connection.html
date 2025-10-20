@@ -38,6 +38,7 @@
         <button onclick="testChatGPT()">🤖 Test ChatGPT Endpoint</button>
         <button onclick="testAllEndpoints()">🔍 Test All Endpoints</button>
         <button onclick="testBothServices()">🔄 Test Both Services</button>
+        <button onclick="testNewEndpoints()">🧪 Test New Endpoints</button>
         <button onclick="testEnvironmentDetection()">🌍 Test Environment Detection</button>
         <button onclick="clearResults()">🗑️ Clear Results</button>
     </div>
@@ -233,6 +234,96 @@
                 addResult('❌ API Service (Valuation)', `Error: ${error.message}`, 'error');
             }
         }
+
+        async function testNewEndpoints() {
+            addResult('🧪 Testing New Endpoints', 'Testing the newly implemented POC endpoints...', 'info');
+            
+            // Test IFRS Ask
+            try {
+                const response = await fetch(BACKEND_URL + '/poc/ifrs-ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: 'What is fair value measurement under IFRS 13?' })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ IFRS Ask', 
+                        `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                } else {
+                    addResult('❌ IFRS Ask', 
+                        `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                addResult('❌ IFRS Ask', `Error: ${error.message}`, 'error');
+            }
+            
+            // Test Parse Contract
+            try {
+                const response = await fetch(BACKEND_URL + '/poc/parse-contract', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        text: 'This is a sample interest rate swap contract with a notional amount of $10 million and a maturity of 5 years.' 
+                    })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Parse Contract', 
+                        `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                } else {
+                    addResult('❌ Parse Contract', 
+                        `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                addResult('❌ Parse Contract', `Error: ${error.message}`, 'error');
+            }
+            
+            // Test Explain Run
+            try {
+                const response = await fetch(BACKEND_URL + '/poc/explain-run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ run_id: 'test-run-001' })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Explain Run', 
+                        `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                } else {
+                    addResult('❌ Explain Run', 
+                        `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                addResult('❌ Explain Run', `Error: ${error.message}`, 'error');
+            }
+            
+            // Test Curves
+            try {
+                const response = await fetch(BACKEND_URL + '/api/valuation/curves');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Curves', 
+                        `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                } else {
+                    addResult('❌ Curves', 
+                        `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error');
+                }
+            } catch (error) {
+                addResult('❌ Curves', `Error: ${error.message}`, 'error');
+            }
+        }
         
         async function testAllEndpoints() {
             const endpoints = [
@@ -241,9 +332,9 @@
                 { name: 'Valuation Runs (GET)', url: '/api/valuation/runs', method: 'GET' },
                 { name: 'Curves', url: '/api/valuation/curves', method: 'GET' },
                 { name: 'Chat (GET)', url: '/poc/chat', method: 'GET' },
-                { name: 'IFRS Ask', url: '/poc/ifrs-ask', method: 'GET' },
-                { name: 'Parse Contract', url: '/poc/parse-contract', method: 'GET' },
-                { name: 'Explain Run', url: '/poc/explain-run', method: 'GET' }
+                { name: 'IFRS Ask', url: '/poc/ifrs-ask', method: 'POST', data: { question: 'What is fair value measurement under IFRS 13?' } },
+                { name: 'Parse Contract', url: '/poc/parse-contract', method: 'POST', data: { text: 'This is a sample interest rate swap contract with a notional amount of $10 million and a maturity of 5 years.' } },
+                { name: 'Explain Run', url: '/poc/explain-run', method: 'POST', data: { run_id: 'test-run-001' } }
             ];
             
             addResult('🔍 Testing All Endpoints', 'Running comprehensive endpoint tests...', 'info');
@@ -256,7 +347,7 @@
                     };
                     
                     if (endpoint.method === 'POST') {
-                        options.body = JSON.stringify({ message: 'Test message' });
+                        options.body = JSON.stringify(endpoint.data || { message: 'Test message' });
                     }
                     
                     const response = await fetch(BACKEND_URL + endpoint.url, options);
