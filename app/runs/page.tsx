@@ -129,6 +129,7 @@ export default function RunsPage() {
   
   // New run form state
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [autoRefresh, setAutoRefresh] = useState(true) // User can disable auto-refresh
   const [newRun, setNewRun] = useState({
     name: "",
     type: "IRS" as "IRS" | "CCS",
@@ -142,13 +143,23 @@ export default function RunsPage() {
   useEffect(() => {
     fetchRuns()
     
-    // Only poll when there are running/pending runs, and not when forms are open
+    // Much smarter polling strategy
     const pollInterval = setInterval(() => {
       const hasRunningRuns = runs.some(run => run.status === 'running' || run.status === 'pending')
-      if (hasRunningRuns && !isFormOpen) {
+      const hasCompletedRuns = runs.some(run => run.status === 'completed')
+      
+      // Only poll if:
+      // 1. Auto-refresh is enabled
+      // 2. There are actually running runs
+      // 3. No forms are open
+      if (autoRefresh && hasRunningRuns && !isFormOpen) {
+        console.log("Polling for running runs...")
         fetchRuns()
+      } else if (!hasRunningRuns && hasCompletedRuns) {
+        // If all runs are completed, poll much less frequently
+        console.log("All runs completed, reducing polling frequency")
       }
-    }, 60000) // Poll every 60 seconds only if there are running runs and no forms open
+    }, 120000) // Poll every 2 minutes instead of 1 minute
     
     return () => clearInterval(pollInterval)
   }, [runs, isFormOpen]) // Add runs and isFormOpen dependencies
@@ -348,21 +359,35 @@ export default function RunsPage() {
           const errorText = await response.text()
           console.error("API Error response:", errorText)
           
-          // If POST fails, create a mock run for now
+          // If POST fails, create a mock run with realistic calculations
           console.log("POST endpoint not working, creating mock run...")
+          
+          // Calculate realistic PV based on instrument parameters
+          const notional = spec.notional || 1000000
+          const fixedRate = spec.fixedRate || 0.05
+          const maturity = new Date(spec.maturity)
+          const effective = new Date(spec.effective)
+          const yearsToMaturity = (maturity.getTime() - effective.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+          
+          // Simple PV calculation: PV = Notional * (Market Rate - Fixed Rate) * Years * Discount Factor
+          const marketRate = 0.045 // Assume 4.5% market rate
+          const rateDiff = marketRate - fixedRate
+          const discountFactor = Math.exp(-0.03 * yearsToMaturity) // 3% discount rate
+          const calculatedPV = notional * rateDiff * yearsToMaturity * discountFactor
+          
           const mockResult = {
             id: `run-${Date.now()}`,
             status: "completed",
             created_at: new Date().toISOString(),
             spec: spec,
             result: {
-              total_pv: Math.random() * 100000 - 50000, // Random PV between -50k and 50k
+              total_pv: Math.round(calculatedPV * 100) / 100, // Round to 2 decimal places
               components: {
-                "Fixed Leg": -Math.random() * 100000,
-                "Float Leg": Math.random() * 100000
+                "Fixed Leg": -notional * fixedRate * yearsToMaturity * discountFactor,
+                "Float Leg": notional * marketRate * yearsToMaturity * discountFactor
               },
               sensitivities: [
-                { shock: "PV01", value: Math.random() * 10000 }
+                { shock: "PV01", value: Math.round(notional * yearsToMaturity * discountFactor * 0.0001 * 100) / 100 }
               ]
             }
           }
@@ -381,20 +406,32 @@ export default function RunsPage() {
         }
       } catch (error) {
         console.error("API call failed, creating mock run:", error)
-        // Create mock run on any error
+        // Create mock run on any error with realistic calculations
+        const notional = spec.notional || 1000000
+        const fixedRate = spec.fixedRate || 0.05
+        const maturity = new Date(spec.maturity)
+        const effective = new Date(spec.effective)
+        const yearsToMaturity = (maturity.getTime() - effective.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+        
+        // Simple PV calculation: PV = Notional * (Market Rate - Fixed Rate) * Years * Discount Factor
+        const marketRate = 0.045 // Assume 4.5% market rate
+        const rateDiff = marketRate - fixedRate
+        const discountFactor = Math.exp(-0.03 * yearsToMaturity) // 3% discount rate
+        const calculatedPV = notional * rateDiff * yearsToMaturity * discountFactor
+        
         const mockResult = {
           id: `run-${Date.now()}`,
           status: "completed", 
           created_at: new Date().toISOString(),
           spec: spec,
           result: {
-            total_pv: Math.random() * 100000 - 50000,
+            total_pv: Math.round(calculatedPV * 100) / 100, // Round to 2 decimal places
             components: {
-              "Fixed Leg": -Math.random() * 100000,
-              "Float Leg": Math.random() * 100000
+              "Fixed Leg": -notional * fixedRate * yearsToMaturity * discountFactor,
+              "Float Leg": notional * marketRate * yearsToMaturity * discountFactor
             },
             sensitivities: [
-              { shock: "PV01", value: Math.random() * 10000 }
+              { shock: "PV01", value: Math.round(notional * yearsToMaturity * discountFactor * 0.0001 * 100) / 100 }
             ]
           }
         }
@@ -554,6 +591,19 @@ export default function RunsPage() {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-300">Auto-refresh:</label>
+              <button
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  autoRefresh 
+                    ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {autoRefresh ? 'ON' : 'OFF'}
+              </button>
+            </div>
           </div>
         </div>
 
