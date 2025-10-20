@@ -10,24 +10,39 @@
         .success { background: #0d4f0d; border-color: #4caf50; }
         .error { background: #4d0d0d; border-color: #f44336; }
         .info { background: #0d2d4d; border-color: #2196f3; }
-        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
         button:hover { background: #0056b3; }
-        pre { background: #2a2a2a; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button:active { transform: translateY(1px); }
+        pre { background: #2a2a2a; padding: 10px; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; }
+        h1 { color: #4caf50; text-align: center; }
+        h3 { margin-top: 0; color: #fff; }
+        .button-group { text-align: center; margin: 20px 0; }
+        .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+        .status-success { background: #4caf50; }
+        .status-error { background: #f44336; }
+        .status-info { background: #2196f3; }
     </style>
 </head>
 <body>
     <h1>🔧 Backend Connection Test</h1>
-    <p>Testing connection to: <code>https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net</code></p>
+    <p>Testing connection to: <code>https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net</code></p>
     
     <div id="results"></div>
     
-    <button onclick="testConnection()">🧪 Test Backend Connection</button>
-    <button onclick="testChatGPT()">🤖 Test ChatGPT Endpoint</button>
-    <button onclick="testAllEndpoints()">🔍 Test All Endpoints</button>
-    <button onclick="clearResults()">🗑️ Clear Results</button>
+    <div class="button-group">
+        <button onclick="testConnection()">🧪 Test Backend Connection</button>
+        <button onclick="testHealth()">💚 Test Health Check</button>
+        <button onclick="testValuationRuns()">📊 Test Valuation Runs</button>
+        <button onclick="testCreateRun()">➕ Test Create Run</button>
+        <br>
+        <button onclick="testChatGPT()">🤖 Test ChatGPT Endpoint</button>
+        <button onclick="testAllEndpoints()">🔍 Test All Endpoints</button>
+        <button onclick="testEnvironmentDetection()">🌍 Test Environment Detection</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
 
     <script>
-        const BACKEND_URL = 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
+        const BACKEND_URL = 'https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net';
         
         function addResult(title, content, type = 'info') {
             const results = document.getElementById('results');
@@ -58,6 +73,79 @@
             }
         }
         
+        async function testHealth() {
+            addResult('💚 Testing Health Check', 'Testing GET /healthz endpoint...', 'info');
+            
+            try {
+                const response = await fetch(BACKEND_URL + '/healthz');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Health Check Success', JSON.stringify(data, null, 2), 'success');
+                } else {
+                    addResult('❌ Health Check Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Health Check Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testValuationRuns() {
+            addResult('📊 Testing Valuation Runs', 'Testing GET /api/valuation/runs endpoint...', 'info');
+            
+            try {
+                const response = await fetch(BACKEND_URL + '/api/valuation/runs');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Valuation Runs Success', `Found ${data.length} runs:\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    addResult('❌ Valuation Runs Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Valuation Runs Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCreateRun() {
+            addResult('➕ Testing Create Run', 'Testing POST /api/valuation/runs endpoint...', 'info');
+            
+            const testRun = {
+                spec: {
+                    type: "IRS",
+                    ccy: "USD",
+                    notional: 1000000,
+                    effective: "2024-01-15",
+                    maturity: "2029-01-15",
+                    fixedRate: 4.25,
+                    floatIndex: "SOFR-3M"
+                },
+                asOf: "2024-01-15",
+                marketDataProfile: "default",
+                approach: ["OIS_discounting"]
+            };
+            
+            try {
+                const response = await fetch(BACKEND_URL + '/api/valuation/runs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testRun)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Create Run Success', `Run created with ID: ${data.id || data.run_id}\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    addResult('❌ Create Run Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Create Run Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
         async function testChatGPT() {
             addResult('🤖 Testing ChatGPT Endpoint', 'Testing POST /poc/chat endpoint...', 'info');
             
@@ -82,13 +170,38 @@
             }
         }
         
+        async function testEnvironmentDetection() {
+            addResult('🌍 Testing Environment Detection', 'Testing frontend environment detection logic...', 'info');
+            
+            const envInfo = {
+                hostname: window.location.hostname,
+                href: window.location.href,
+                isLocalhost: ['localhost', '127.0.0.1'].includes(window.location.hostname),
+                isAzure: window.location.hostname.includes('azurestaticapps.net'),
+                isProduction: !['localhost', '127.0.0.1'].includes(window.location.hostname),
+                userAgent: navigator.userAgent,
+                protocol: window.location.protocol
+            };
+            
+            const expectedBackend = envInfo.isLocalhost 
+                ? 'http://localhost:9000' 
+                : 'https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net';
+            
+            addResult('✅ Environment Detection', 
+                `Environment Info:\n${JSON.stringify(envInfo, null, 2)}\n\nExpected Backend: ${expectedBackend}`, 
+                'success');
+        }
+        
         async function testAllEndpoints() {
             const endpoints = [
                 { name: 'Health Check', url: '/healthz', method: 'GET' },
                 { name: 'API Info', url: '/', method: 'GET' },
-                { name: 'Valuation Runs', url: '/api/valuation/runs', method: 'GET' },
+                { name: 'Valuation Runs (GET)', url: '/api/valuation/runs', method: 'GET' },
                 { name: 'Curves', url: '/api/valuation/curves', method: 'GET' },
-                { name: 'Chat (GET)', url: '/poc/chat', method: 'GET' }
+                { name: 'Chat (GET)', url: '/poc/chat', method: 'GET' },
+                { name: 'IFRS Ask', url: '/poc/ifrs-ask', method: 'GET' },
+                { name: 'Parse Contract', url: '/poc/parse-contract', method: 'GET' },
+                { name: 'Explain Run', url: '/poc/explain-run', method: 'GET' }
             ];
             
             addResult('🔍 Testing All Endpoints', 'Running comprehensive endpoint tests...', 'info');
@@ -105,12 +218,23 @@
                     }
                     
                     const response = await fetch(BACKEND_URL + endpoint.url, options);
-                    const data = await response.json();
+                    
+                    // Try to parse as JSON, but handle non-JSON responses
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (e) {
+                        data = await response.text();
+                    }
                     
                     if (response.ok) {
-                        addResult(`✅ ${endpoint.name}`, JSON.stringify(data, null, 2), 'success');
+                        addResult(`✅ ${endpoint.name}`, 
+                            typeof data === 'string' ? data : JSON.stringify(data, null, 2), 
+                            'success');
                     } else {
-                        addResult(`❌ ${endpoint.name}`, `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                        addResult(`❌ ${endpoint.name}`, 
+                            `Status: ${response.status}\nResponse: ${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`, 
+                            'error');
                     }
                 } catch (error) {
                     addResult(`❌ ${endpoint.name}`, `Error: ${error.message}`, 'error');
@@ -118,9 +242,22 @@
             }
         }
         
-        // Auto-run basic test on page load
+        // Auto-run basic tests on page load
         window.onload = function() {
-            addResult('🚀 Page Loaded', 'Ready to test backend connection. Click the buttons above to run tests.', 'info');
+            addResult('🚀 Page Loaded', 'Running automatic tests...', 'info');
+            
+            // Auto-run environment detection and health check
+            setTimeout(() => {
+                testEnvironmentDetection();
+            }, 500);
+            
+            setTimeout(() => {
+                testHealth();
+            }, 1000);
+            
+            setTimeout(() => {
+                testConnection();
+            }, 1500);
         };
     </script>
 </body>
