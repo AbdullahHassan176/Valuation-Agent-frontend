@@ -2,7 +2,9 @@
  * PoC API client for constrained ChatGPT integration
  */
 
-const BACKEND_BASE = process.env.NEXT_PUBLIC_BACKEND_BASE || 'http://localhost:8000';
+import API_CONFIG from './api-config';
+
+const BACKEND_BASE = API_CONFIG.BASE_URL;
 
 export interface ExtractRequest {
   text?: string;
@@ -136,7 +138,7 @@ export async function ifrsAsk(question: string, sources: Array<{ source_id: stri
 /**
  * Explain a valuation run
  */
-export async function explainRun(runId: string, apiBase: string = 'http://localhost:9000', extraContext?: string, sources?: Array<{ source_id: string; text: string; section?: string }>): Promise<ExplainRunResponse> {
+export async function explainRun(runId: string, apiBase: string = API_CONFIG.BASE_URL, extraContext?: string, sources?: Array<{ source_id: string; text: string; section?: string }>): Promise<ExplainRunResponse> {
   const request: ExplainRunRequest = {
     run_id: runId,
     api_base: apiBase,
