@@ -20,6 +20,7 @@ const getApiBaseUrl = () => {
     : 'https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net';
   
   console.log('Selected backend URL:', backendUrl);
+  console.log('Config file: src/lib/api-config.ts');
   return backendUrl;
 };
 
