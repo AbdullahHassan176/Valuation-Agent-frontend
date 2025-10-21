@@ -34,18 +34,21 @@
     <div id="results"></div>
     
     <div class="button-group">
-        <button onclick="testConnection()">🧪 Test Backend Connection</button>
+    <button onclick="testConnection()">🧪 Test Backend Connection</button>
         <button onclick="testHealth()">💚 Test Health Check</button>
         <button onclick="testValuationRuns()">📊 Test Valuation Runs</button>
         <button onclick="testCreateRun()">➕ Test Create Run</button>
         <br>
-        <button onclick="testChatGPT()">🤖 Test ChatGPT Endpoint</button>
-        <button onclick="testAllEndpoints()">🔍 Test All Endpoints</button>
+        <button onclick="testGroqLLM()">🤖 Test Groq LLM Endpoint</button>
+        <button onclick="testGroqConfig()">🔧 Test Groq Configuration</button>
+        <button onclick="testXVAOptions()">📊 Test XVA Options</button>
+        <button onclick="testCreateRunWithXVA()">💰 Test Create Run with XVA</button>
+    <button onclick="testAllEndpoints()">🔍 Test All Endpoints</button>
         <button onclick="testBothServices()">🔄 Test Both Services</button>
         <button onclick="testNewEndpoints()">🧪 Test New Endpoints</button>
         <button onclick="testDatabaseStatus()">🗄️ Test Database Status</button>
         <button onclick="testEnvironmentDetection()">🌍 Test Environment Detection</button>
-        <button onclick="clearResults()">🗑️ Clear Results</button>
+    <button onclick="clearResults()">🗑️ Clear Results</button>
     </div>
 
     <script>
@@ -154,8 +157,8 @@
             }
         }
         
-        async function testChatGPT() {
-            addResult('🤖 Testing ChatGPT Endpoint', 'Testing POST /poc/chat endpoint...', 'info');
+        async function testGroqLLM() {
+            addResult('🤖 Testing Groq LLM Endpoint', 'Testing POST /poc/chat endpoint with Groq LLM...', 'info');
             
             try {
                 const response = await fetch(BACKEND_URL + '/poc/chat', {
@@ -163,18 +166,161 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ message: 'Hello! This is a test message.' })
+                    body: JSON.stringify({ message: 'Hello! This is a test message for Groq LLM. Can you tell me about XVA calculations?' })
                 });
                 
                 const data = await response.json();
                 
                 if (response.ok) {
-                    addResult('✅ ChatGPT Endpoint Success', JSON.stringify(data, null, 2), 'success');
+                    const llmInfo = data.llm_powered ? '✅ Powered by Groq LLM' : '⚠️ Using fallback responses';
+                    const modelInfo = data.model ? `\nModel: ${data.model}` : '';
+                    const fallbackInfo = data.fallback ? '\n⚠️ FALLBACK MODE' : '';
+                    
+                    addResult('✅ Groq LLM Endpoint Success', 
+                        `${llmInfo}${modelInfo}${fallbackInfo}\n\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'success');
                 } else {
-                    addResult('❌ ChatGPT Endpoint Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                    addResult('❌ Groq LLM Endpoint Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
                 }
             } catch (error) {
-                addResult('❌ ChatGPT Error', `Error: ${error.message}`, 'error');
+                addResult('❌ Groq LLM Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testGroqConfig() {
+            addResult('🔧 Testing Groq Configuration', 'Testing Groq LLM configuration and availability...', 'info');
+            
+            try {
+                // First test the Groq configuration endpoint
+                const configResponse = await fetch(BACKEND_URL + '/api/test/groq-config');
+                const configData = await configResponse.json();
+                
+                if (configResponse.ok) {
+                    const configAnalysis = `
+Groq Configuration Status:
+- Groq Configured: ${configData.groq_configured ? '✅ YES' : '❌ NO'}
+- API Key Present: ${configData.api_key_present ? '✅ YES' : '❌ NO'}
+- Base URL: ${configData.groq_base_url}
+- Model: ${configData.groq_model}
+- Use Groq: ${configData.use_groq ? '✅ YES' : '❌ NO'}
+- API Key Preview: ${configData.api_key_preview}
+
+Full Config: ${JSON.stringify(configData, null, 2)}`;
+                    
+                    addResult('✅ Groq Configuration Status', configAnalysis, 'success');
+                } else {
+                    addResult('❌ Groq Configuration Endpoint Failed', `Status: ${configResponse.status}\nResponse: ${JSON.stringify(configData, null, 2)}`, 'error');
+                }
+                
+                // Then test with a specific Groq-focused message
+                const chatResponse = await fetch(BACKEND_URL + '/poc/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: 'What is your name and what LLM are you using? Please be specific about the model.' 
+                    })
+                });
+                
+                const chatData = await chatResponse.json();
+                
+                if (chatResponse.ok) {
+                    const chatAnalysis = `
+Groq LLM Test Results:
+- LLM Powered: ${chatData.llm_powered ? '✅ YES' : '❌ NO'}
+- Model: ${chatData.model || 'Unknown'}
+- Version: ${chatData.version || 'Unknown'}
+- Fallback Mode: ${chatData.fallback ? '⚠️ YES' : '✅ NO'}
+- Response Length: ${chatData.response ? chatData.response.length : 0} characters
+
+Response Preview: ${chatData.response ? chatData.response.substring(0, 200) + '...' : 'No response'}
+
+Full Chat Response: ${JSON.stringify(chatData, null, 2)}`;
+                    
+                    addResult('✅ Groq LLM Test Results', chatAnalysis, 'success');
+                } else {
+                    addResult('❌ Groq Chat Test Failed', `Status: ${chatResponse.status}\nResponse: ${JSON.stringify(chatData, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Groq Configuration Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testXVAOptions() {
+            addResult('📊 Testing XVA Options', 'Testing XVA calculation options endpoint...', 'info');
+            
+            try {
+                const response = await fetch(BACKEND_URL + '/api/valuation/xva-options');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const analysis = `
+XVA Options Available:
+- QuantLib Available: ${data.quantlib_available ? '✅ YES' : '❌ NO'}
+- Available Components: ${Object.keys(data.available_xva_components).join(', ')}
+- Default IRS Selection: ${data.default_selections.IRS.join(', ')}
+- Default CCS Selection: ${data.default_selections.CCS.join(', ')}
+
+Full Response: ${JSON.stringify(data, null, 2)}`;
+                    
+                    addResult('✅ XVA Options Test', analysis, 'success');
+                } else {
+                    addResult('❌ XVA Options Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ XVA Options Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCreateRunWithXVA() {
+            addResult('💰 Testing Create Run with XVA', 'Testing run creation with XVA calculations...', 'info');
+            
+            try {
+                const runRequest = {
+                    asOf: new Date().toISOString().split('T')[0],
+                    spec: {
+                        ccy: "USD",
+                        notional: 10000000,
+                        fixedRate: 0.035,
+                        effective: "2024-01-01",
+                        maturity: "2029-01-01",
+                        counterparty_rating: "BBB",
+                        own_rating: "AA",
+                        funding_rate: 0.025,
+                        capital_ratio: 0.12,
+                        margin_rate: 0.015
+                    },
+                    xva_selection: ["CVA", "DVA", "FVA", "KVA", "MVA"]
+                };
+                
+                const response = await fetch(BACKEND_URL + '/api/valuation/runs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(runRequest)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const analysis = `
+XVA Run Creation Success:
+- Run ID: ${data.id}
+- PV Base CCY: $${data.pv_base_ccy}
+- XVA Selection: ${data.xva_selection ? data.xva_selection.join(', ') : 'None'}
+- QuantLib Used: ${data.calculation_details?.method === 'quantlib_advanced' ? '✅ YES' : '❌ NO'}
+- XVA Components: ${data.xva_analysis?.xva_components ? Object.keys(data.xva_analysis.xva_components).join(', ') : 'None'}
+
+Full Response: ${JSON.stringify(data, null, 2)}`;
+                    
+                    addResult('✅ XVA Run Creation Success', analysis, 'success');
+                } else {
+                    addResult('❌ XVA Run Creation Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ XVA Run Creation Error', `Error: ${error.message}`, 'error');
             }
         }
         
