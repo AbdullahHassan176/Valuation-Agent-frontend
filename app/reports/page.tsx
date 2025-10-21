@@ -143,7 +143,7 @@ export default function ReportsPage() {
           size: "2.1 KB",
           icon: <DollarSign className="h-5 w-5" />,
           color: "bg-blue-500",
-          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/run-001-USD-5Y-IRS-Report.md",
+          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/frontend/run-001-USD-5Y-IRS-Report.md",
           runId: "run-001",
           instrumentType: "IRS",
           currency: "USD",
@@ -161,7 +161,7 @@ export default function ReportsPage() {
           size: "4.2 KB",
           icon: <Shield className="h-5 w-5" />,
           color: "bg-red-500",
-          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/run-001-USD-5Y-IRS-CVA-Analysis.md",
+          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/frontend/run-001-USD-5Y-IRS-CVA-Analysis.md",
           runId: "run-001",
           instrumentType: "IRS",
           currency: "USD",
@@ -179,7 +179,7 @@ export default function ReportsPage() {
           size: "1.8 KB",
           icon: <TrendingUp className="h-5 w-5" />,
           color: "bg-green-500",
-          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/run-002-EUR-USD-CCS-Report.md",
+          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/frontend/run-002-EUR-USD-CCS-Report.md",
           runId: "run-002",
           instrumentType: "CCS",
           currency: "EUR",
@@ -197,7 +197,7 @@ export default function ReportsPage() {
           size: "3.9 KB",
           icon: <Calculator className="h-5 w-5" />,
           color: "bg-purple-500",
-          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/run-002-EUR-USD-CCS-CVA-Analysis.md",
+          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/frontend/run-002-EUR-USD-CCS-CVA-Analysis.md",
           runId: "run-002",
           instrumentType: "CCS",
           currency: "EUR",
@@ -215,7 +215,7 @@ export default function ReportsPage() {
           size: "2.5 KB",
           icon: <BarChart3 className="h-5 w-5" />,
           color: "bg-indigo-500",
-          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/Portfolio-Summary-Report.md",
+          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/frontend/Portfolio-Summary-Report.md",
           created_at: "2025-10-21T12:00:00Z"
         },
         {
@@ -228,7 +228,7 @@ export default function ReportsPage() {
           size: "3.7 KB",
           icon: <BookOpen className="h-5 w-5" />,
           color: "bg-orange-500",
-          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/Portfolio-CVA-Analytics.md",
+          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/frontend/Portfolio-CVA-Analytics.md",
           created_at: "2025-10-21T12:15:00Z"
         },
         {
@@ -241,7 +241,7 @@ export default function ReportsPage() {
           size: "4.1 KB",
           icon: <AlertTriangle className="h-5 w-5" />,
           color: "bg-yellow-500",
-          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/Advanced-Risk-Analytics.md",
+          url: "https://github.com/AbdullahHassan176/Valuation-Agent-frontend/blob/main/frontend/Advanced-Risk-Analytics.md",
           created_at: "2025-10-21T12:30:00Z"
         }
       ]
