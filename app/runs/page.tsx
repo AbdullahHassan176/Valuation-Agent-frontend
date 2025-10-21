@@ -354,9 +354,9 @@ export default function RunsPage() {
               notional: runData.notional,
               ccy: runData.currency,
               fixedRate: runData.fixedRate,
-              effective: runData.effective,
-              maturity: runData.maturity,
-              tenor_years: runData.tenorYears,
+              effective: today,
+              maturity: calculateMaturityDate(today, runData.tenor),
+              tenor_years: parseFloat(runData.tenor.replace('Y', '')),
               instrument_type: runData.type,
               frequency: "SemiAnnual"
             },
