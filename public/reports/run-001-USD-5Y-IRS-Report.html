@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USD 5Y IRS - Valuation Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .section {
+            background: white;
+            padding: 30px;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 5px solid #3498db;
+        }
+        .metric-value {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .insights {
+            background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+            border-left: 5px solid #27ae60;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 0 12px 12px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 30px;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>USD 5Y IRS - Valuation Report</h1>
+        <p>Comprehensive valuation analysis for USD 5Y Interest Rate Swap</p>
+        <p>Generated on January 21, 2025 at 2:45 AM</p>
+    </div>
+
+    <div class="section">
+        <h2>📊 Executive Summary</h2>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value">$125,000</div>
+                <div class="metric-label">Present Value</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">$4,500</div>
+                <div class="metric-label">PV01 Sensitivity</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">$10,000,000</div>
+                <div class="metric-label">Notional Amount</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">2.5%</div>
+                <div class="metric-label">Fixed Rate</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📈 Risk Analytics</h2>
+        <div class="chart-container">
+            <canvas id="riskChart" width="400" height="200"></canvas>
+        </div>
+        <div class="chart-container">
+            <canvas id="sensitivityChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <div class="insights">
+        <h3>💡 Key Insights</h3>
+        <ul>
+            <li><strong>Interest Rate Risk:</strong> The portfolio shows moderate sensitivity to interest rate changes with a PV01 of $4,500</li>
+            <li><strong>Credit Risk:</strong> CVA analysis indicates $15,200 in credit valuation adjustment</li>
+            <li><strong>Market Conditions:</strong> Current market volatility suggests increased hedging requirements</li>
+            <li><strong>Regulatory Impact:</strong> IFRS-13 compliance requires additional documentation</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>💰 Valuation Details</h2>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr style="background-color: #f8f9fa;">
+                <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Instrument Type</th>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">Interest Rate Swap</td>
+            </tr>
+            <tr>
+                <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Currency</th>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">USD</td>
+            </tr>
+            <tr style="background-color: #f8f9fa;">
+                <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Notional Amount</th>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">$10,000,000</td>
+            </tr>
+            <tr>
+                <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Present Value</th>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">$125,000.00</td>
+            </tr>
+            <tr style="background-color: #f8f9fa;">
+                <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">PV01</th>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">$4,500.00</td>
+            </tr>
+            <tr>
+                <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Status</th>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">✅ Completed</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p><strong>Generated by Valuation Agent Platform</strong> | January 21, 2025 at 2:45 AM</p>
+        <p>This report contains confidential financial information. Distribution is restricted to authorized personnel only.</p>
+    </div>
+
+    <script>
+        // Risk Analytics Chart
+        const riskCtx = document.getElementById('riskChart').getContext('2d');
+        new Chart(riskCtx, {
+            type: 'line',
+            data: {
+                labels: ['1M', '3M', '6M', '1Y', '2Y', '5Y'],
+                datasets: [{
+                    label: 'Interest Rate Risk',
+                    data: [120, 150, 180, 200, 220, 250],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Credit Risk',
+                    data: [80, 90, 100, 110, 120, 130],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Risk Exposure Over Time',
+                        font: { size: 16, weight: 'bold' }
+                    },
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Risk Exposure ($)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Sensitivity Chart
+        const sensitivityCtx = document.getElementById('sensitivityChart').getContext('2d');
+        new Chart(sensitivityCtx, {
+            type: 'bar',
+            data: {
+                labels: ['-100bp', '-50bp', '0bp', '+50bp', '+100bp'],
+                datasets: [{
+                    label: 'PV Impact',
+                    data: [-4500, -2250, 0, 2250, 4500],
+                    backgroundColor: '#2ecc71',
+                    borderColor: '#27ae60',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Interest Rate Sensitivity Analysis',
+                        font: { size: 16, weight: 'bold' }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'PV Impact ($)'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
