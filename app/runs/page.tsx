@@ -175,8 +175,8 @@ export default function RunsPage() {
       // Try to call the actual API
       console.log("Attempting to fetch runs from API...")
       const apiUrl = window.location.hostname === 'localhost' 
-        ? 'http://localhost:9000/api/valuation/runs'
-        : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net/api/valuation/runs'
+        ? 'http://localhost:8000/api/valuation/runs'
+        : 'https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net/api/valuation/runs'
       
       console.log("Fetching runs from API URL:", apiUrl)
       const response = await fetch(apiUrl, {
@@ -339,7 +339,7 @@ export default function RunsPage() {
       console.log("Creating run with spec:", spec)
       const apiUrl = window.location.hostname === 'localhost' 
         ? 'http://localhost:8000/api/valuation/runs'
-        : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net/api/valuation/runs'
+        : 'https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net/api/valuation/runs'
       
       console.log("Calling API URL:", apiUrl)
       
