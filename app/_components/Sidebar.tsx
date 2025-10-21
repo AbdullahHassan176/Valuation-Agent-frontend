@@ -21,7 +21,8 @@ import {
   ChevronRight,
   MessageSquare,
   BarChart3,
-  Activity
+  Activity,
+  FileDown
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -56,6 +57,12 @@ const navigationItems = [
         href: '/reports',
         icon: FileText,
         badge: '7',
+      },
+      {
+        title: 'Generate Reports',
+        href: '/reports/generate',
+        icon: FileDown,
+        badge: null,
       },
       {
         title: 'Intake',
