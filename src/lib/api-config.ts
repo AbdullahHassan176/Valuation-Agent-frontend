@@ -17,7 +17,7 @@ const getApiBaseUrl = () => {
   // Use local backend for development, Azure backend for production
   const backendUrl = isLocalhost
     ? 'http://localhost:9000'
-    : 'https://valuation-backend-api-cadmfqgxgzawa7fp.canadacentral-01.azurewebsites.net';
+    : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
   
   console.log('Selected backend URL:', backendUrl);
   console.log('Config file: src/lib/api-config.ts');
