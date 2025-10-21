@@ -197,20 +197,20 @@ export default function RunsPage() {
       
         // Transform API response to match frontend interface
         const apiRuns: ValuationRun[] = data.map((run: any) => ({
-          id: run.id || run.run_id,
-          name: run.name || `${run.spec?.ccy || 'USD'} ${run.spec?.maturity || '5Y'} ${run.type || 'IRS'}`,
-          type: run.type || (run.spec?.ccy2 ? 'CCS' : 'IRS'),
-          status: run.status || 'pending',
-          notional: run.spec?.notional || 0,
-          currency: run.spec?.ccy || 'USD',
-          tenor: calculateTenorFromMaturity(run.spec?.effective, run.spec?.maturity),
-          fixedRate: run.spec?.fixedRate,
-          floatingIndex: run.spec?.floatIndex || 'SOFR',
-          pv: run.result?.pv_base_ccy || 0,
-          pv01: run.result?.sensitivities?.[0]?.value || 0,
+          id: run.id,
+          name: run.name || `${run.currency || 'USD'} ${run.tenor || '5Y'} ${run.type || 'IRS'}`,
+          type: run.type || 'IRS',
+          status: run.status || 'completed',
+          notional: run.notional || 0,
+          currency: run.currency || 'USD',
+          tenor: run.tenor || '5Y',
+          fixedRate: run.fixedRate,
+          floatingIndex: run.floatingIndex || 'SOFR',
+          pv: run.pv || run.pv_base_ccy || 0,
+          pv01: run.pv01 || 0,
           created_at: run.created_at || new Date().toISOString(),
           completed_at: run.completed_at,
-          error: run.error_message
+          error: run.error
         }))
         
         // Add mock runs from localStorage
@@ -350,10 +350,17 @@ export default function RunsPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            spec: spec,
-            asOf: today,
-            marketDataProfile: "default",
-            approach: ["OIS_discounting"]
+            spec: {
+              notional: runData.notional,
+              ccy: runData.currency,
+              fixedRate: runData.fixedRate,
+              effective: runData.effective,
+              maturity: runData.maturity,
+              tenor_years: runData.tenorYears,
+              instrument_type: runData.type,
+              frequency: "SemiAnnual"
+            },
+            asOf: today
           })
         })
         
@@ -407,6 +414,30 @@ export default function RunsPage() {
         } else {
           const result = await response.json()
           console.log("Run created successfully:", result)
+          
+          // Transform the result to match frontend interface
+          const newRun: ValuationRun = {
+            id: result.id,
+            name: result.name || `${result.currency || 'USD'} ${result.tenor || '5Y'} ${result.type || 'IRS'}`,
+            type: result.type || 'IRS',
+            status: result.status || 'completed',
+            notional: result.notional || 0,
+            currency: result.currency || 'USD',
+            tenor: result.tenor || '5Y',
+            fixedRate: result.fixedRate,
+            floatingIndex: result.floatingIndex || 'SOFR',
+            pv: result.pv || result.pv_base_ccy || 0,
+            pv01: result.pv01 || 0,
+            created_at: result.created_at || new Date().toISOString(),
+            completed_at: result.completed_at,
+            error: result.error
+          }
+          
+          // Add to runs list
+          setRuns(prevRuns => [newRun, ...prevRuns])
+          
+          // Show success message
+          alert("Run created successfully!")
         }
       } catch (error) {
         console.error("API call failed, creating mock run:", error)
