@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend Endpoints Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .test { margin: 10px 0; padding: 15px; border-radius: 4px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Backend Endpoints Test</h1>
+        <p>Testing all backend API endpoints to identify the issue.</p>
+        
+        <div id="results"></div>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="testHealth()">🏥 Health Check</button>
+            <button onclick="testGetRuns()">📋 GET /api/valuation/runs</button>
+            <button onclick="testPostRuns()">➕ POST /api/valuation/runs</button>
+            <button onclick="testAllEndpoints()">🚀 Test All</button>
+            <button onclick="clearResults()">🗑️ Clear</button>
+        </div>
+    </div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        const baseUrl = 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testHealth() {
+            log('🏥 Testing health endpoint...', 'info');
+            try {
+                const response = await fetch(`${baseUrl}/healthz`);
+                const data = await response.json();
+                if (response.ok) {
+                    log(`✅ Health check passed: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    log(`❌ Health check failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Health check error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testGetRuns() {
+            log('📋 Testing GET /api/valuation/runs...', 'info');
+            try {
+                const response = await fetch(`${baseUrl}/api/valuation/runs`);
+                const data = await response.json();
+                if (response.ok) {
+                    log(`✅ GET runs successful: Found ${data.length} runs`, 'success');
+                } else {
+                    log(`❌ GET runs failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ GET runs error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testPostRuns() {
+            log('➕ Testing POST /api/valuation/runs...', 'info');
+            try {
+                const testData = {
+                    spec: {
+                        notional: 1000000,
+                        ccy: "USD",
+                        payFixed: true,
+                        fixedRate: 0.05,
+                        floatIndex: "SOFR",
+                        effective: "2024-01-15",
+                        maturity: "2029-01-15",
+                        dcFixed: "ACT/360",
+                        dcFloat: "ACT/360",
+                        freqFixed: "Q",
+                        freqFloat: "Q",
+                        calendar: "USD",
+                        bdc: "MODIFIED_FOLLOWING"
+                    },
+                    asOf: "2024-01-15",
+                    marketDataProfile: "default",
+                    approach: ["OIS_discounting"]
+                };
+                
+                log(`📤 Sending POST request with data: <pre>${JSON.stringify(testData, null, 2)}</pre>`, 'info');
+                
+                const response = await fetch(`${baseUrl}/api/valuation/runs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                log(`📊 Response status: ${response.status} ${response.statusText}`, 'info');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ POST runs successful: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ POST runs failed: ${response.status} - ${errorText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ POST runs error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAllEndpoints() {
+            log('🚀 Testing all endpoints...', 'info');
+            await testHealth();
+            await testGetRuns();
+            await testPostRuns();
+            log('🏁 All endpoint tests completed!', 'info');
+        }
+        
+        // Auto-run on page load
+        window.onload = function() {
+            log('🔧 Backend Endpoints Test Tool Loaded', 'info');
+            log(`🌐 Testing against: ${baseUrl}`, 'info');
+        };
+    </script>
+</body>
+</html>
+

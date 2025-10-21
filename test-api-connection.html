@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Valuation Platform API Connection Test</h1>
+    
+    <div id="results"></div>
+    
+    <button onclick="testBackendHealth()">Test Backend Health</button>
+    <button onclick="testAPIRuns()">Test API Runs Endpoint</button>
+    <button onclick="testCreateRun()">Test Create Run</button>
+    <button onclick="testAll()">Test All Connections</button>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(div);
+        }
+        
+        function getAPIBaseUrl() {
+            const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+            return isLocalhost 
+                ? 'http://localhost:9000'
+                : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
+        }
+        
+        async function testBackendHealth() {
+            log('Testing backend health endpoint...', 'info');
+            try {
+                const response = await fetch(`${getAPIBaseUrl()}/healthz`);
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Backend is healthy: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    log(`❌ Backend health check failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Backend connection failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAPIRuns() {
+            log('Testing API runs endpoint...', 'info');
+            try {
+                const response = await fetch(`${getAPIBaseUrl()}/api/valuation/runs`);
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ API runs endpoint working: Found ${data.length} runs`, 'success');
+                } else {
+                    log(`❌ API runs endpoint failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ API runs connection failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCreateRun() {
+            log('Testing create run endpoint...', 'info');
+            try {
+                const testRun = {
+                    spec: {
+                        notional: 1000000,
+                        ccy: "USD",
+                        payFixed: true,
+                        fixedRate: 0.05,
+                        floatIndex: "SOFR",
+                        effective: new Date().toISOString().split('T')[0],
+                        maturity: new Date(Date.now() + 365 * 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        dcFixed: "ACT/360",
+                        dcFloat: "ACT/360",
+                        freqFixed: "Q",
+                        freqFloat: "Q",
+                        calendar: "USD",
+                        bdc: "MODIFIED_FOLLOWING"
+                    },
+                    asOf: new Date().toISOString().split('T')[0],
+                    marketDataProfile: "default",
+                    approach: ["OIS_discounting"]
+                };
+                
+                const response = await fetch(`${getAPIBaseUrl()}/api/valuation/runs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testRun)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Run created successfully: ${data.id}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Create run failed: ${response.status} - ${errorText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Create run connection failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAll() {
+            log('Starting comprehensive API connection test...', 'info');
+            await testBackendHealth();
+            await testAPIRuns();
+            await testCreateRun();
+            log('API connection test completed!', 'info');
+        }
+        
+        // Auto-run basic test on page load
+        window.onload = function() {
+            log('API Connection Test Page Loaded', 'info');
+            log(`Testing against: ${getAPIBaseUrl()}`, 'info');
+        };
+    </script>
+</body>
+</html>
+
