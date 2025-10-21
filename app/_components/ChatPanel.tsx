@@ -81,14 +81,6 @@ export function ChatPanel() {
       if (backendStatus.healthy) {
         // Backend is healthy, send real message
         response = await chatService.sendMessage(currentInput)
-        
-        // Add context about available data
-        if (backendStatus.runs > 0 || backendStatus.curves > 0) {
-          response += `\n\n📊 **Backend Status:**\n- ${backendStatus.runs} valuation runs available\n- ${backendStatus.curves} curves available`
-          if (backendStatus.lastRun) {
-            response += `\n- Latest run: ${backendStatus.lastRun.valuation_type} (${backendStatus.lastRun.status})`
-          }
-        }
       } else {
         // Backend is not healthy, provide helpful message
         response = "I'm having trouble connecting to the valuation backend. Please check if the backend is running and try again."
