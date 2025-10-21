@@ -52,6 +52,12 @@ const navigationItems = [
         badge: '12',
       },
       {
+        title: 'Reports',
+        href: '/reports',
+        icon: FileText,
+        badge: '7',
+      },
+      {
         title: 'Intake',
         href: '/intake',
         icon: FileText,
