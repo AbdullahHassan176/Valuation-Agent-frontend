@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Groq Response</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .response-preview {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Groq LLM Response Test</h1>
+        <p>This page tests the Groq LLM integration and displays the full response.</p>
+        
+        <div class="test-section info">
+            <h3>Test Configuration</h3>
+            <p><strong>Backend URL:</strong> <span id="backendUrl">Loading...</span></p>
+            <p><strong>Test Message:</strong> <span id="testMessage">Loading...</span></p>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Controls</h3>
+            <button onclick="testGroqResponse()">🧪 Test Groq Response</button>
+            <button onclick="testSimpleMessage()">💬 Test Simple Message</button>
+            <button onclick="testComplexMessage()">🔬 Test Complex Message</button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net';
+        
+        // Initialize page
+        document.getElementById('backendUrl').textContent = BACKEND_URL;
+        document.getElementById('testMessage').textContent = 'What is your name and what LLM model are you using?';
+        
+        function addResult(title, content, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            results.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testGroqResponse() {
+            addResult('🧪 Testing Groq LLM Response', 'Sending test message to Groq LLM...', 'info');
+            
+            try {
+                const response = await fetch(BACKEND_URL + '/poc/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: 'What is your name and what LLM model are you using? Please be specific about the model and your capabilities.' 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const analysis = `
+Groq LLM Analysis:
+- Status: ${response.status}
+- LLM Powered: ${data.llm_powered ? '✅ YES' : '❌ NO'}
+- Version: ${data.version || 'Unknown'}
+- Response Length: ${data.response ? data.response.length : 0} characters
+- Fallback Mode: ${data.fallback ? '⚠️ YES' : '✅ NO'}
+
+Full Response:
+${JSON.stringify(data, null, 2)}`;
+                    
+                    addResult('✅ Groq Response Test', analysis, 'success');
+                } else {
+                    addResult('❌ Groq Response Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Groq Response Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSimpleMessage() {
+            addResult('💬 Testing Simple Message', 'Sending simple message to Groq LLM...', 'info');
+            
+            try {
+                const response = await fetch(BACKEND_URL + '/poc/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: 'Hello! How are you?' 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Simple Message Test', 
+                        `Response: ${data.response}\n\nFull Data: ${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                } else {
+                    addResult('❌ Simple Message Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Simple Message Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testComplexMessage() {
+            addResult('🔬 Testing Complex Message', 'Sending complex valuation question to Groq LLM...', 'info');
+            
+            try {
+                const response = await fetch(BACKEND_URL + '/poc/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: 'Analyze the current valuation runs and provide a comprehensive audit report with specific recommendations for IFRS 13 compliance.' 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const responsePreview = data.response ? data.response.substring(0, 500) + '...' : 'No response';
+                    
+                    addResult('✅ Complex Message Test', 
+                        `Response Preview (first 500 chars):\n${responsePreview}\n\nFull Response Length: ${data.response ? data.response.length : 0} characters\n\nLLM Powered: ${data.llm_powered ? 'YES' : 'NO'}\n\nFull Data: ${JSON.stringify(data, null, 2)}`, 
+                        'success');
+                } else {
+                    addResult('❌ Complex Message Failed', `Status: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult('❌ Complex Message Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run test on page load
+        window.onload = function() {
+            addResult('🚀 Page Loaded', 'Groq LLM Response Test Page Ready', 'info');
+            setTimeout(() => {
+                testGroqResponse();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
+

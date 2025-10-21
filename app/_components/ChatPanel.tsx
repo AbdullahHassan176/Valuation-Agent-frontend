@@ -86,6 +86,9 @@ export function ChatPanel() {
         response = "I'm having trouble connecting to the valuation backend. Please check if the backend is running and try again."
       }
       
+      console.log('ChatPanel received response:', response);
+      console.log('Response length:', response.length);
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',

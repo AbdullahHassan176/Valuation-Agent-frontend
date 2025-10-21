@@ -166,7 +166,7 @@ export default function DashboardPage() {
       
       // Call the API to create the run
       const apiUrl = window.location.hostname === 'localhost' 
-        ? 'http://localhost:9000/api/valuation/runs'
+        ? 'http://localhost:8000/api/valuation/runs'
         : 'https://valuation-backend-ephph9gkdjcca0c0.canadacentral-01.azurewebsites.net/api/valuation/runs'
       
       console.log("Creating run via API URL:", apiUrl)
@@ -645,4 +645,6 @@ export default function DashboardPage() {
   </div>
   )
 }
+
+
 

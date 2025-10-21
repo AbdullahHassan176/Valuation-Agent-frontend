@@ -56,6 +56,9 @@ class ChatService {
       }
 
       const data = await response.json();
+      console.log('Chat service response:', data);
+      console.log('Response length:', data.response ? data.response.length : 0);
+      console.log('LLM powered:', data.llm_powered);
       return data.response || data.message || 'I received your message but could not process it.';
     } catch (error) {
       console.error('Chat service error:', error);
